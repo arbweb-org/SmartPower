@@ -1,0 +1,21 @@
+﻿@page "/"
+
+<div class="monitor-container">
+    <div class="header">
+        <h3>Smart Power Monitor</h3>
+        <div class="status-chip @(_status.ToLower())">
+            @_status
+        </div>
+    </div>
+
+    <div class="svg-wrapper">
+        <svg viewBox="0 0 5000 4096" preserveAspectRatio="none" style="width:100%; height:400px;">
+            <polyline points="@_pointsS1" fill="none" stroke="blue" stroke-width="2" />
+        </svg>
+    </div>
+
+    <div class="footer-info">
+        <span>Device: 192.168.100.33</span>
+        <span>Resolution: 200μs/Sample</span>
+    </div>
+</div>

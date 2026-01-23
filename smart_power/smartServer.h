@@ -3,8 +3,11 @@
 
 #include <WiFi.h>
 #include <WebServer.h>
+#include <WebSocketsServer.h>
+
 #include "smartCommon.h"
 
+// WiFi Configuration
 const char* ssid = "WE_D2D139";
 const char* password = "e6c37eb3";
 
@@ -13,72 +16,58 @@ IPAddress local_IP(192, 168, 100, 33);
 IPAddress gateway(192, 168, 100, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81);
 
-void handleRoot() {
-  float cRms05, cRms30, cFinal;
+void sendBinaryData(uint8_t num) {
+  takeSnapshot();
 
-  // Protect the read operation to get synchronized values
-  if (xSemaphoreTake(dataMutex, portMAX_DELAY)) {
-    cRms05 = rms05_mA / 1000.0;
-    cRms30 = rms30_mA / 1000.0;
-    cFinal = finalRms_mA / 1000.0;
-    xSemaphoreGive(dataMutex);
-  }
+  // Calculate total bytes: 2500 samples * 12 bytes each = 30,000 bytes
+  size_t totalBytes = BUFFER_SIZE * sizeof(Sample);
 
-String html = "<html><head><meta http-equiv='refresh' content='1'>";
-  html += "<style>body{font-family:sans-serif; text-align:center; background:#f4f4f4;}";
-  html += ".card{margin:20px auto; padding:15px; width:80%; max-width:400px; border-radius:10px; border:2px solid;}";
-  html += ".final{background:#27ae60; color:white; border-color:#219150;}";
-  html += ".raw{background:white; border-color:#bdc3c7; color:#7f8c8d; font-size:0.9em;}</style></head>";
-  
-  html += "<body>";
-  html += "<h1>Power Monitor</h1>";
-
-  // --- Final RMS Display (The Smart Selection) ---
-  html += "<div class='card final'>";
-  html += "<h3>Final Calculated Load</h3>";
-  html += "<span style='font-size: 3em; font-weight: bold;'>" + String(cFinal, 2) + " A</span>";
-  html += "<p style='margin-top:5px; opacity:0.8;'>Source: " + String(cRms05 < 1.0 ? "High Precision (5A)" : "High Range (30A)") + "</p>";
-  html += "</div>";
-
-  // --- Raw Sensor Data (For Reference) ---
-  html += "<div style='display: flex; justify-content: center; gap: 10px;'>";
-  html += " <div class='card raw' style='margin:0;'>";
-  html += " <b>Sensor 05</b><br>" + String(cRms05, 3) + " A</div>";
-    
-  html += " <div class='card raw' style='margin:0;'>";
-  html += " <b>Sensor 30</b><br>" + String(cRms30, 3) + " A</div>";
-  html += "</div>";
-
-  html += "</body></html>";
-
-  server.send(200, "text/html", html);
+  // Send the entire snapshot array as a binary "blob"
+  webSocket.sendBIN(num, (uint8_t*)snapshot, totalBytes);
 }
 
-void server_setup(){
-  // Apply Static IP settings
-  // If config fails, it will fall back to DHCP
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+  switch (type) {
+    case WStype_DISCONNECTED:
+      break;
+    case WStype_CONNECTED:
+      break;
+    case WStype_TEXT:
+      // If client sends "get", we blast the data
+      if (strncmp((char*)payload, "get", 3) == 0) {
+        sendBinaryData(num);
+      }
+      break;
+  }
+}
+
+void initWiFi() {
+  digitalWrite(LED_BUILTIN, HIGH);
+
   if (!WiFi.config(local_IP, gateway, subnet)) {
-    digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
+    delay(1000);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(1000);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_BUILTIN, LOW);
+    return;
   }
 
+  digitalWrite(LED_BUILTIN, LOW);
   WiFi.begin(ssid, password);
-
-  // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-    delay(500);
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED off by making the voltage LOW
-    delay(500);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(250);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(250);
   }
+  digitalWrite(LED_BUILTIN, HIGH);
 
-  server.on("/", handleRoot);
-  server.begin();
-}
-
-void server_loop_once(){
-  server.handleClient(); 
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
 }
 
 #endif

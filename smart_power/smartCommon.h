@@ -1,13 +1,18 @@
 #ifndef SMART_COMMON_H
 #define SMART_COMMON_H
 
-#include <Arduino.h>
+// Sampling Configuration
+#define SAMPLE_INTERVAL_US 200
+#define BUFFER_SIZE 2500  // Adjust based on RAM availability
 
-// Values are now in Milliamperes (e.g., 500 = 0.5A)
-inline volatile int rms05_mA = 0;
-inline volatile int rms30_mA = 0;
-inline volatile int finalRms_mA = 0;
+struct __attribute__((packed)) Sample {
+  uint32_t time;  // microseconds
+  int s1;
+  int s2;
+};
 
-inline SemaphoreHandle_t dataMutex;
+Sample buffer[BUFFER_SIZE];
+Sample snapshot[BUFFER_SIZE];  // Secondary buffer for the web server
+volatile int head = 0;
 
 #endif
