@@ -19,14 +19,34 @@ IPAddress subnet(255, 255, 255, 0);
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
+// Header structure for binary response (8 bytes)
+struct __attribute__((packed)) DataHeader {
+  float cal1;
+  float cal2;
+};
+
 void sendBinaryData(uint8_t num) {
   takeSnapshot();
 
-  // Calculate total bytes: 2500 samples * 12 bytes each = 30,000 bytes
-  size_t totalBytes = BUFFER_SIZE * sizeof(Sample);
+  // Create header with calibration factors
+  DataHeader header;
+  header.cal1 = calFactor1;
+  header.cal2 = calFactor2;
 
-  // Send the entire snapshot array as a binary "blob"
-  webSocket.sendBIN(num, (uint8_t*)snapshot, totalBytes);
+  // Total bytes: 8 (header) + 2500 samples * 12 bytes each = 30,008 bytes
+  size_t headerBytes = sizeof(DataHeader);
+  size_t sampleBytes = BUFFER_SIZE * sizeof(Sample);
+  size_t totalBytes = headerBytes + sampleBytes;
+
+  // Create combined buffer
+  uint8_t* combinedBuffer = (uint8_t*)malloc(totalBytes);
+  memcpy(combinedBuffer, &header, headerBytes);
+  memcpy(combinedBuffer + headerBytes, snapshot, sampleBytes);
+
+  // Send the entire buffer as a binary "blob"
+  webSocket.sendBIN(num, combinedBuffer, totalBytes);
+
+  free(combinedBuffer);
 }
 
 void sendCalibration(uint8_t num) {

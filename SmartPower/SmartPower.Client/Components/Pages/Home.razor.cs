@@ -8,7 +8,9 @@ namespace SmartPower.Client.Components.Pages;
 public partial class Home : ComponentBase, IDisposable
 {
     private const string DEVICE_URL = "ws://192.168.100.33:81";
-    private const int TOTAL_BYTES = 30000; // 2500 samples * 12 bytes
+    private const int HEADER_BYTES = 8;      // 2 floats (cal1, cal2)
+    private const int SAMPLE_BYTES = 30000;  // 2500 samples * 12 bytes
+    private const int TOTAL_BYTES = HEADER_BYTES + SAMPLE_BYTES; // 30,008 bytes
 
     private const int WINDOW_MS = 1000; // 1 Second window
     private List<EspSample> _masterBuffer = new();
@@ -16,6 +18,10 @@ public partial class Home : ComponentBase, IDisposable
     protected string _pointsS1 = "";
     protected string _pointsS2 = "";
     protected string _status = "Disconnected";
+
+    // Calibration factors (received from ESP32)
+    protected float _calFactor1 = 1.0f;
+    protected float _calFactor2 = 1.0f;
 
     private ClientWebSocket _socket;
     private CancellationTokenSource _cts = new();
@@ -44,7 +50,7 @@ public partial class Home : ComponentBase, IDisposable
                     var sendBuffer = Encoding.UTF8.GetBytes("get\0");
                     await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
 
-                    // 2. READ: Fill the buffer until we have exactly 30,000 bytes
+                    // 2. READ: Fill the buffer until we have exactly 30,008 bytes
                     int totalRead = 0;
 
                     while (totalRead < TOTAL_BYTES)
@@ -81,11 +87,19 @@ public partial class Home : ComponentBase, IDisposable
         try
         {
             IntPtr ptr = handle.AddrOfPinnedObject();
+
+            // Parse header (first 8 bytes)
+            var header = Marshal.PtrToStructure<DataHeader>(ptr);
+            _calFactor1 = header.Cal1;
+            _calFactor2 = header.Cal2;
+
+            // Parse samples (starting after header)
+            IntPtr samplesPtr = IntPtr.Add(ptr, HEADER_BYTES);
             var incomingBatch = new List<EspSample>();
 
             for (int i = 0; i < 2500; i++)
             {
-                incomingBatch.Add(Marshal.PtrToStructure<EspSample>(IntPtr.Add(ptr, i * 12)));
+                incomingBatch.Add(Marshal.PtrToStructure<EspSample>(IntPtr.Add(samplesPtr, i * 12)));
             }
 
             UpdateMasterBuffer(incomingBatch);
@@ -142,6 +156,14 @@ public partial class Home : ComponentBase, IDisposable
     {
         _cts.Cancel();
         _socket?.Dispose();
+    }
+
+    // Header structure matching ESP32 DataHeader (8 bytes)
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct DataHeader
+    {
+        public float Cal1;
+        public float Cal2;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

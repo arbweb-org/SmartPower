@@ -48,12 +48,18 @@ SmartPower is an IoT solution for real-time electrical power monitoring. It cons
 
 ### Data Format
 
-Each sample is a 12-byte packed struct:
+The binary response includes a header followed by sample data:
+
+**Header (8 bytes):**
+- `cal1` (4 bytes): Calibration factor 1 (float)
+- `cal2` (4 bytes): Calibration factor 2 (float)
+
+**Each sample (12 bytes):**
 - `time` (4 bytes): Microsecond timestamp
 - `s1` (4 bytes): Sensor 1 reading (0-4095)
 - `s2` (4 bytes): Sensor 2 reading (0-4095)
 
-Total transmission per request: **30,000 bytes** (2,500 samples)
+Total transmission per request: **30,008 bytes** (8 header + 2,500 samples × 12)
 
 ## MAUI Blazor Client
 
