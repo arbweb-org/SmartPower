@@ -6,6 +6,7 @@
 #include <WebSocketsServer.h>
 
 #include "smartCommon.h"
+#include "smartCalibration.h"
 
 // WiFi Configuration
 const char* ssid = "WE_D2D139";
@@ -28,6 +29,27 @@ void sendBinaryData(uint8_t num) {
   webSocket.sendBIN(num, (uint8_t*)snapshot, totalBytes);
 }
 
+void sendCalibration(uint8_t num) {
+  char response[64];
+  snprintf(response, sizeof(response), "cal:%.6f,%.6f", calFactor1, calFactor2);
+  webSocket.sendTXT(num, response);
+}
+
+void handleSetCalibration(uint8_t num, char* payload) {
+  // Expected format: "setcal:1.23,4.56"
+  char* data = payload + 7;  // Skip "setcal:"
+  char* comma = strchr(data, ',');
+  if (comma) {
+    *comma = '\0';
+    calFactor1 = atof(data);
+    calFactor2 = atof(comma + 1);
+    saveCalibration();
+    webSocket.sendTXT(num, "ok");
+  } else {
+    webSocket.sendTXT(num, "err");
+  }
+}
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
@@ -38,6 +60,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
       // If client sends "get", we blast the data
       if (strncmp((char*)payload, "get", 3) == 0) {
         sendBinaryData(num);
+      }
+      // Get calibration factors
+      else if (strncmp((char*)payload, "getcal", 6) == 0) {
+        sendCalibration(num);
+      }
+      // Set calibration factors (format: "setcal:1.23,4.56")
+      else if (strncmp((char*)payload, "setcal:", 7) == 0) {
+        handleSetCalibration(num, (char*)payload);
       }
       break;
   }

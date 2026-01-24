@@ -5,6 +5,7 @@
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
+  initCalibration();
   initSensor();
   initWiFi();
 }
