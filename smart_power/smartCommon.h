@@ -3,7 +3,7 @@
 
 // Sampling Configuration
 #define SAMPLE_INTERVAL_US 200
-#define BUFFER_SIZE 2500  // Adjust based on RAM availability
+#define BUFFER_SIZE 2000
 
 struct __attribute__((packed)) Sample {
   uint32_t time;  // microseconds

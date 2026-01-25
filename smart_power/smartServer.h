@@ -33,7 +33,7 @@ void sendBinaryData(uint8_t num) {
   header.cal1 = calFactor1;
   header.cal2 = calFactor2;
 
-  // Total bytes: 8 (header) + 2500 samples * 12 bytes each = 30,008 bytes
+  // Total bytes: 8 (header) + 2000 samples * 12 bytes each = 24,008 bytes
   size_t headerBytes = sizeof(DataHeader);
   size_t sampleBytes = BUFFER_SIZE * sizeof(Sample);
   size_t totalBytes = headerBytes + sampleBytes;

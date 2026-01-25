@@ -31,7 +31,7 @@ SmartPower is an IoT solution for real-time electrical power monitoring. It cons
 
 - **High-Frequency Sampling**: 200 microseconds per sample (5 kHz sampling rate)
 - **Dual-Channel Input**: Reads from two analog sensors (GPIO 34 & 35)
-- **Circular Buffer**: Stores 2,500 samples in memory (~0.5 seconds of data)
+- **Circular Buffer**: Stores 2,000 samples in memory (~0.4 seconds of data)
 - **WebSocket Server**: Streams binary data on demand via port 81
 - **Static IP**: Configured for `192.168.100.33`
 - **Calibration Storage**: Two persistent calibration factors stored in flash memory
@@ -59,7 +59,7 @@ The binary response includes a header followed by sample data:
 - `s1` (4 bytes): Sensor 1 reading (0-4095)
 - `s2` (4 bytes): Sensor 2 reading (0-4095)
 
-Total transmission per request: **30,008 bytes** (8 header + 2,500 samples × 12)
+Total transmission per request: **24,008 bytes** (8 header + 2,000 samples × 12)
 
 ## MAUI Blazor Client
 
@@ -113,14 +113,14 @@ The client communicates with the ESP32 using WebSocket text commands:
 
 | Command | Response | Description |
 |---------|----------|-------------|
-| `get` | 30,000 bytes binary | Returns 2,500 samples of sensor data |
+| `get` | 24,008 bytes binary | Returns 2,000 samples of sensor data |
 | `getcal` | `cal:X.XXXXXX,Y.YYYYYY` | Returns current calibration factors |
 | `setcal:X,Y` | `ok` or `err` | Sets and persists calibration factors |
 
 ### Data Streaming Flow
 
 1. **Client → ESP32**: Send `"get"` text message
-2. **ESP32 → Client**: Respond with 30,000 bytes of binary sample data
+2. **ESP32 → Client**: Respond with 24,008 bytes of binary sample data
 3. Client processes data and repeats after 300ms delay
 
 ## License

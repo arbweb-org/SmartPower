@@ -1,6 +1,5 @@
 .monitor-container {
     background: #f8f9fa; /* Light grey background */
-    min-height: 100vh;
     padding: 1.5rem;
     color: #212529; /* Dark text */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
