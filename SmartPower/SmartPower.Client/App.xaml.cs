@@ -1,15 +1,25 @@
 ﻿namespace SmartPower.Client
 {
-    public partial class App : Application
+    public partial class App : Application, IDisposable
     {
-        public App()
+        private readonly IServiceProvider _services;
+        public App(IServiceProvider services)
         {
             InitializeComponent();
+            _services = services;
+            _services.GetRequiredService<Services.DeviceService>().Start();
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new MainPage()) { Title = "SmartPower.Client" };
+            var window = new Window(new MainPage()) { Title = "SmartPower.Client" };
+            window.Destroying += (s, e) => Dispose();
+            return window;
+        }
+
+        public void Dispose()
+        {
+            _services.GetRequiredService<Services.DeviceService>().Dispose();
         }
     }
 }

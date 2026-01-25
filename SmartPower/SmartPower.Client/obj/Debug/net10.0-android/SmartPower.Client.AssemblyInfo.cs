@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+014d59725802ad93707f95f738fc1b825e8e2904")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+51e02f4df1859bb4dbc0a3fff5aadf0da103c92b")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

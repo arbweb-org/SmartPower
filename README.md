@@ -114,7 +114,7 @@ The client communicates with the ESP32 using WebSocket text commands:
 | Command | Response | Description |
 |---------|----------|-------------|
 | `get` | 24,008 bytes binary | Returns 2,000 samples of sensor data |
-| `cal:X|Y` | `ok` or `err` | Sets and persists calibration factors (X, Y are integers) |
+| `cal|X|Y` | `ok` or `err` | Sets and persists calibration factors (X, Y are integers) |
 
 ### Data Streaming Flow
 

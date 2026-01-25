@@ -1,24 +1,20 @@
 ﻿using SmartPower.Client.Models;
-using System.Net.WebSockets;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SmartPower.Client.Components.Pages;
 
 public partial class Home : IDisposable
 {
-    private const string DEVICE_URL = "ws://192.168.100.33:81";
-    private const int HEADER_BYTES = 8;      // 2 floats (cal1, cal2)
-    private const int SAMPLE_BYTES = 24000;  // 2000 samples * 12 bytes
-    private const int TOTAL_BYTES = HEADER_BYTES + SAMPLE_BYTES; // 24,008 bytes
+    [Microsoft.AspNetCore.Components.Inject]
+    public Services.DeviceService DeviceService { get; set; } = default!;
 
     private const int WINDOW_MS = 1000; // 1 Second window
     private uint lastMicros = 0;
-    private CircularBuffer _masterBuffer = new(5000); // Store last 5000 samples (1 seconds at 50Hz)
-    private CircularBuffer _rms = new(25); // Store last 25 RMS values (1 second, 2 cycles each)
+    private CircularBuffer _masterBuffer = new(5001); // Store last 5000 samples (1 seconds at 50Hz)
+    private CircularBuffer _rms = new(26); // Store last 25 RMS values (1 second, 2 cycles each)
 
-    protected string _pointsCrn = "";
-    protected string _pointsRms = "";
+    protected string _pointsCrn = string.Empty;
+    protected string _pointsRms = string.Empty;
     protected string _status = "Disconnected";
 
     // Calibration factors (received from ESP32 as Ints x 10000)
@@ -27,95 +23,27 @@ public partial class Home : IDisposable
     private int _lastRms1; // Current s1 RMS value in mA for calibration prompt
     private int _lastRms2; // Current s2 RMS value in mA for calibration prompt
 
-    private ClientWebSocket _socket;
-    private ClientWebSocket _calSocket;
-    private CancellationTokenSource _cts = new();
-
     protected override void OnInitialized()
     {
-        _socket = new ClientWebSocket();
-        _socket.Options.Proxy = null;
-
-        _calSocket = new ClientWebSocket();
-        _calSocket.Options.Proxy = null;
-
-        _ = StartConnectionLoop();
-        // handle disposal on page unload
-        Application.Current.Windows[0].Page.Disappearing += (_, _) => Dispose();
+        DeviceService.OnDataReceived += HandleDataReceived;
+        DeviceService.OnStatusChanged += HandleStatusChanged;
+        _status = DeviceService.Status;
     }
 
-    private async Task StartConnectionLoop()
+    private void HandleStatusChanged(string status)
     {
-        // Retrying connection loop
-        while (!_cts.IsCancellationRequested)
-        {
-            try
-            {
-                await _socket.ConnectAsync(new Uri(DEVICE_URL), _cts.Token);
-                _status = "Connected";
-                await InvokeAsync(StateHasChanged);
-
-                byte[] receiveBuffer = new byte[TOTAL_BYTES];
-                var bufferSegment = new ArraySegment<byte>(receiveBuffer);
-
-                // 300ms interval request loop
-                while (_socket.State == WebSocketState.Open && !_cts.IsCancellationRequested)
-                {
-                    // 1. WRITE: Request data (Send "get" as bytes)
-                    // Send the "get" command
-                    var sendBuffer = Encoding.UTF8.GetBytes("get");
-                    await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
-
-                    // 2. READ: Fill the buffer until we have exactly 30,008 bytes
-                    int totalRead = 0;
-
-                    while (totalRead < TOTAL_BYTES)
-                    {
-                        var result = await _socket.ReceiveAsync(bufferSegment.Slice(totalRead, TOTAL_BYTES - totalRead), _cts.Token);
-
-                        if (result.MessageType == WebSocketMessageType.Close) break;
-
-                        totalRead += result.Count;
-                    }
-
-                    if (totalRead == TOTAL_BYTES)
-                    {
-                        // Set calibration factors and append samples
-                        ProcessBinaryData(receiveBuffer);
-
-                        // Draw curves
-                        DrawCurves();
-                        await InvokeAsync(StateHasChanged);
-                    }
-
-                    await Task.Delay(300, _cts.Token);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Stream Error: {ex.Message}");
-                _status = "Retrying...";
-                await InvokeAsync(StateHasChanged);
-                await Task.Delay(300);
-            }
-        }
+        _status = status;
+        InvokeAsync(StateHasChanged);
     }
 
-    private void ProcessBinaryData(byte[] data)
+    private void HandleDataReceived(Span<EspSample> samples, int cal1, int cal2)
     {
-        var span = data.AsSpan();
+        _s1CalFactX10000 = cal1;
+        _s2CalFactX10000 = cal2;
 
-        // Header
-        var header = MemoryMarshal.Read<DataHeader>(span);
-        _s1CalFactX10000 = header.Cal1;
-        _s2CalFactX10000 = header.Cal2;
-
-        // Samples
-        var samplesSpan = span.Slice(HEADER_BYTES);
-        var samples = MemoryMarshal.Cast<byte, EspSample>(samplesSpan);
-
-        // Append samples to master buffer
-        PrepareSamples(samples.Slice(0, 2000));
+        PrepareSamples(samples);
+        DrawCurves();
+        InvokeAsync(StateHasChanged);
     }
 
     private void PrepareSamples(Span<EspSample> samples)
@@ -258,6 +186,8 @@ public partial class Home : IDisposable
         {
             _masterBuffer.Enqueue((int)reading);
         }
+        
+        _rms.Enqueue((int)rms);
     }
 
     private async Task Calibrate()
@@ -296,43 +226,9 @@ public partial class Home : IDisposable
             return;
         }
 
-        // Calculate new factor: New = Old * (Target / Current)
-        // Avoid division by zero
-        if (_lastRms == 0) _lastRms = 1;
-
-        double ratio = (double)targetRms / _lastRms;
-        int newCalFact = isChannel1
-            ? (int)(_s1CalFactX10000 * ratio)
-            : (int)(_s2CalFactX10000 * ratio);
-
-        if (newCalFact > 100000000)
-        {
-            await Application.Current.Windows[0].Page.DisplayAlertAsync("Error", "Calculated calibration factor is out of acceptable range.", "OK");
-            return;
-        }
-
-        // Update local variables immediately for UI response
-        if (isChannel1)
-        {
-            _s1CalFactX10000 = newCalFact;
-        }
-        else
-        {
-            _s2CalFactX10000 = newCalFact;
-        }
-
-        // Send new calibration factors via a separate connection
         try
         {
-            await _calSocket.ConnectAsync(new Uri(DEVICE_URL), _cts.Token);
-
-            if (_calSocket.State == WebSocketState.Open)
-            {
-                string cmd = $"cal|{_s1CalFactX10000}|{_s2CalFactX10000}";
-                var sendBuffer = Encoding.UTF8.GetBytes(cmd);
-                await _calSocket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
-                await _calSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Done", _cts.Token);
-            }
+            await DeviceService.Calibrate(targetRms, isChannel1, _lastRms);
         }
         catch (Exception ex)
         {
@@ -367,8 +263,7 @@ public partial class Home : IDisposable
 
     public void Dispose()
     {
-        _cts.Cancel();
-        _socket?.Dispose();
-        _calSocket?.Dispose();
+        DeviceService.OnDataReceived -= HandleDataReceived;
+        DeviceService.OnStatusChanged -= HandleStatusChanged;
     }
 }
