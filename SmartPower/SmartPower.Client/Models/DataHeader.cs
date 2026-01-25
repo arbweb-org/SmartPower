@@ -6,7 +6,7 @@ namespace SmartPower.Client.Models
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DataHeader
     {
-        public float Cal1;
-        public float Cal2;
+        public int Cal1;
+        public int Cal2;
     }
 }

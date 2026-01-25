@@ -5,18 +5,18 @@
 
 Preferences prefs;
 
-float calFactor1 = 1.0f;
-float calFactor2 = 1.0f;
+long s1CalFactX10000 = 10000;
+long s2CalFactX10000 = 10000;
 
 void initCalibration() {
   prefs.begin("smartpower", false);
-  calFactor1 = prefs.getFloat("cal1", 1.0f);
-  calFactor2 = prefs.getFloat("cal2", 1.0f);
+  s1CalFactX10000 = prefs.getLong("cal1", 10000);
+  s2CalFactX10000 = prefs.getLong("cal2", 10000);
 }
 
 void saveCalibration() {
-  prefs.putFloat("cal1", calFactor1);
-  prefs.putFloat("cal2", calFactor2);
+  prefs.putLong("cal1", s1CalFactX10000);
+  prefs.putLong("cal2", s2CalFactX10000);
 }
 
 #endif

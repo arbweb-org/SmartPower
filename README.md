@@ -6,8 +6,8 @@ Real-time power monitoring and waveform visualization for IoT using ESP32 and .N
 
 SmartPower is an IoT solution for real-time electrical power monitoring. It consists of two main components:
 
-1. **ESP32 Firmware** (`smart_power/`) - Arduino-based firmware that samples analog sensors at high frequency and streams data via WebSocket.
-2. **MAUI Blazor Client** (`SmartPower/`) - Cross-platform desktop/mobile app for real-time visualization of power waveforms.
+1.  **ESP32 Firmware** (`smart_power/`) - Arduino-based firmware that samples analog sensors at high frequency and streams data via WebSocket.
+2.  **MAUI Blazor Client** (`SmartPower/`) - Cross-platform desktop/mobile app for real-time visualization of power waveforms.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ SmartPower is an IoT solution for real-time electrical power monitoring. It cons
 - **Circular Buffer**: Stores 2,000 samples in memory (~0.4 seconds of data)
 - **WebSocket Server**: Streams binary data on demand via port 81
 - **Static IP**: Configured for `192.168.100.33`
-- **Calibration Storage**: Two persistent calibration factors stored in flash memory
+- **Calibration Storage**: Two persistent calibration factors (integers) stored in flash memory
 
 ### Files
 
@@ -51,8 +51,8 @@ SmartPower is an IoT solution for real-time electrical power monitoring. It cons
 The binary response includes a header followed by sample data:
 
 **Header (8 bytes):**
-- `cal1` (4 bytes): Calibration factor 1 (float)
-- `cal2` (4 bytes): Calibration factor 2 (float)
+- `cal1` (4 bytes): Calibration factor 1 (int32)
+- `cal2` (4 bytes): Calibration factor 2 (int32)
 
 **Each sample (12 bytes):**
 - `time` (4 bytes): Microsecond timestamp
@@ -114,8 +114,7 @@ The client communicates with the ESP32 using WebSocket text commands:
 | Command | Response | Description |
 |---------|----------|-------------|
 | `get` | 24,008 bytes binary | Returns 2,000 samples of sensor data |
-| `getcal` | `cal:X.XXXXXX,Y.YYYYYY` | Returns current calibration factors |
-| `setcal:X,Y` | `ok` or `err` | Sets and persists calibration factors |
+| `cal:X|Y` | `ok` or `err` | Sets and persists calibration factors (X, Y are integers) |
 
 ### Data Streaming Flow
 

@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Components;
-using SmartPower.Client.Models;
+﻿using SmartPower.Client.Models;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SmartPower.Client.Components.Pages;
 
-public partial class Home : ComponentBase, IDisposable
+public partial class Home : IDisposable
 {
     private const string DEVICE_URL = "ws://192.168.100.33:81";
     private const int HEADER_BYTES = 8;      // 2 floats (cal1, cal2)
@@ -22,14 +21,28 @@ public partial class Home : ComponentBase, IDisposable
     protected string _pointsRms = "";
     protected string _status = "Disconnected";
 
-    // Calibration factors (received from ESP32)
-    protected float _calFactor1 = 1.0f;
-    protected float _calFactor2 = 1.0f;
+    // Calibration factors (received from ESP32 as Ints x 10000)
+    protected int _s1CalFactX10000 = 10000;
+    protected int _s2CalFactX10000 = 10000;
+    private int _lastRms1; // Current s1 RMS value in mA for calibration prompt
+    private int _lastRms2; // Current s2 RMS value in mA for calibration prompt
 
     private ClientWebSocket _socket;
+    private ClientWebSocket _calSocket;
     private CancellationTokenSource _cts = new();
 
-    protected override void OnInitialized() => _ = StartConnectionLoop();
+    protected override void OnInitialized()
+    {
+        _socket = new ClientWebSocket();
+        _socket.Options.Proxy = null;
+
+        _calSocket = new ClientWebSocket();
+        _calSocket.Options.Proxy = null;
+
+        _ = StartConnectionLoop();
+        // handle disposal on page unload
+        Application.Current.Windows[0].Page.Disappearing += (_, _) => Dispose();
+    }
 
     private async Task StartConnectionLoop()
     {
@@ -38,9 +51,6 @@ public partial class Home : ComponentBase, IDisposable
         {
             try
             {
-                _socket = new ClientWebSocket();
-                _socket.Options.Proxy = null;
-
                 await _socket.ConnectAsync(new Uri(DEVICE_URL), _cts.Token);
                 _status = "Connected";
                 await InvokeAsync(StateHasChanged);
@@ -52,6 +62,7 @@ public partial class Home : ComponentBase, IDisposable
                 while (_socket.State == WebSocketState.Open && !_cts.IsCancellationRequested)
                 {
                     // 1. WRITE: Request data (Send "get" as bytes)
+                    // Send the "get" command
                     var sendBuffer = Encoding.UTF8.GetBytes("get");
                     await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
 
@@ -96,8 +107,8 @@ public partial class Home : ComponentBase, IDisposable
 
         // Header
         var header = MemoryMarshal.Read<DataHeader>(span);
-        _calFactor1 = header.Cal1;
-        _calFactor2 = header.Cal2;
+        _s1CalFactX10000 = header.Cal1;
+        _s2CalFactX10000 = header.Cal2;
 
         // Samples
         var samplesSpan = span.Slice(HEADER_BYTES);
@@ -106,7 +117,7 @@ public partial class Home : ComponentBase, IDisposable
         // Append samples to master buffer
         PrepareSamples(samples.Slice(0, 2000));
     }
-    
+
     private void PrepareSamples(Span<EspSample> samples)
     {
         // 1. Sort by time with wrap-around handling
@@ -193,11 +204,14 @@ public partial class Home : ComponentBase, IDisposable
         double sumS1 = 0;
         double sumS2 = 0;
 
-        // Apply calibration factors
+        // Apply calibration factors (integer / 10000.0)
+        float factor1 = _s1CalFactX10000 / 10000.0f;
+        float factor2 = _s2CalFactX10000 / 10000.0f;
+
         for (int i = 0; i < 200; i++)
         {
-            samplesS1[i] = chunk[i].S1 * _calFactor1;
-            samplesS2[i] = chunk[i].S2 * _calFactor2;
+            samplesS1[i] = chunk[i].S1 * factor1;
+            samplesS2[i] = chunk[i].S2 * factor2;
 
             sumS1 += samplesS1[i];
             sumS2 += samplesS2[i];
@@ -223,6 +237,9 @@ public partial class Home : ComponentBase, IDisposable
         double rmsS1 = Math.Sqrt(sumSqS1 / 200);
         double rmsS2 = Math.Sqrt(sumSqS2 / 200);
 
+        _lastRms1 = (int)rmsS1;
+        _lastRms2 = (int)rmsS2;
+
         if (rmsS1 < 1000)
         {
             // Use S1
@@ -241,8 +258,86 @@ public partial class Home : ComponentBase, IDisposable
         {
             _masterBuffer.Enqueue((int)reading);
         }
+    }
 
-        _rms.Enqueue((int)rms);
+    private async Task Calibrate()
+    {
+        // sheet to select which channel to calibrate
+        var resultChannel = await Application.Current.Windows[0].Page.DisplayActionSheetAsync(
+            "Select Channel to Calibrate",
+            "Cancel",
+            null,
+            "Channel 1 (5000mA Max)",
+            "Channel 2 (30000mA Max)");
+
+        if (resultChannel == "Cancel" || resultChannel == null)
+        { return; }
+
+        bool isChannel1 = resultChannel == "Channel 1 (5000mA Max)";
+        // Snapshot of current RMS value
+        int _lastRms = isChannel1 ? _lastRms1 : _lastRms2;
+
+        string resultRMSString = await Application.Current.Windows[0].Page.DisplayPromptAsync(
+            "Calibrate",
+            $"Please enter the calibrated RMS current in mA for the reading {_lastRms}mA",
+            initialValue: _lastRms.ToString(),
+            keyboard: Keyboard.Numeric);
+
+        if (string.IsNullOrEmpty(resultRMSString) || !int.TryParse(resultRMSString, out int targetRms))
+        {
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("Error", "Invalid RMS value entered.", "OK");
+            return;
+        }
+
+        // Minimum should be 100mA, maximum 30000mA
+        if (targetRms < 100 || targetRms > 30000)
+        {
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("Error", "Calibrated RMS value must be between 100mA and 30000mA.", "OK");
+            return;
+        }
+
+        // Calculate new factor: New = Old * (Target / Current)
+        // Avoid division by zero
+        if (_lastRms == 0) _lastRms = 1;
+
+        double ratio = (double)targetRms / _lastRms;
+        int newCalFact = isChannel1
+            ? (int)(_s1CalFactX10000 * ratio)
+            : (int)(_s2CalFactX10000 * ratio);
+
+        if (newCalFact > 100000000)
+        {
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("Error", "Calculated calibration factor is out of acceptable range.", "OK");
+            return;
+        }
+
+        // Update local variables immediately for UI response
+        if (isChannel1)
+        {
+            _s1CalFactX10000 = newCalFact;
+        }
+        else
+        {
+            _s2CalFactX10000 = newCalFact;
+        }
+
+        // Send new calibration factors via a separate connection
+        try
+        {
+            await _calSocket.ConnectAsync(new Uri(DEVICE_URL), _cts.Token);
+
+            if (_calSocket.State == WebSocketState.Open)
+            {
+                string cmd = $"cal|{_s1CalFactX10000}|{_s2CalFactX10000}";
+                var sendBuffer = Encoding.UTF8.GetBytes(cmd);
+                await _calSocket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
+                await _calSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Done", _cts.Token);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.Windows[0].Page.DisplayAlertAsync("Error", $"Calibration failed: {ex.Message}", "OK");
+        }
     }
 
     private void DrawCurves()
@@ -274,5 +369,6 @@ public partial class Home : ComponentBase, IDisposable
     {
         _cts.Cancel();
         _socket?.Dispose();
+        _calSocket?.Dispose();
     }
 }

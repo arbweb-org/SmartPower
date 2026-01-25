@@ -11,14 +11,14 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.PackageName", "com.companyname.smartpower.client")]
+[assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.PackageName", "org.arbweb.smartpower")]
 [assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.PublisherName", "User Name")]
-[assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.Name", "SmartPower.Client")]
+[assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.Name", "Smart Power Monitor")]
 [assembly: System.Reflection.AssemblyMetadataAttribute("Microsoft.Maui.ApplicationModel.AppInfo.Version", "1.0.0.1")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+014d59725802ad93707f95f738fc1b825e8e2904")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+8fbb2c66ec184cfc2a6bcc71e8f17f0e03497060")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartPower.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

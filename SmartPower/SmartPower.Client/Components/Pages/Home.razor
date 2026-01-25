@@ -3,6 +3,7 @@
 <div class="monitor-container">
     <div class="header">
         <h3>Smart Power Monitor</h3>
+        <button class="btn btn-primary" @onclick="Calibrate" style="margin-left: auto; margin-right: 10px;">Calibrate</button>
         <div class="status-chip @(_status.ToLower())">
             @_status
         </div>

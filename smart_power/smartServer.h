@@ -21,8 +21,8 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 // Header structure for binary response (8 bytes)
 struct __attribute__((packed)) DataHeader {
-  float cal1;
-  float cal2;
+  int32_t cal1;
+  int32_t cal2;
 };
 
 void sendBinaryData(uint8_t num) {
@@ -30,8 +30,8 @@ void sendBinaryData(uint8_t num) {
 
   // Create header with calibration factors
   DataHeader header;
-  header.cal1 = calFactor1;
-  header.cal2 = calFactor2;
+  header.cal1 = (int32_t)s1CalFactX10000;
+  header.cal2 = (int32_t)s2CalFactX10000;
 
   // Total bytes: 8 (header) + 2000 samples * 12 bytes each = 24,008 bytes
   size_t headerBytes = sizeof(DataHeader);
@@ -49,27 +49,6 @@ void sendBinaryData(uint8_t num) {
   free(combinedBuffer);
 }
 
-void sendCalibration(uint8_t num) {
-  char response[64];
-  snprintf(response, sizeof(response), "cal:%.6f,%.6f", calFactor1, calFactor2);
-  webSocket.sendTXT(num, response);
-}
-
-void handleSetCalibration(uint8_t num, char* payload) {
-  // Expected format: "setcal:1.23,4.56"
-  char* data = payload + 7;  // Skip "setcal:"
-  char* comma = strchr(data, ',');
-  if (comma) {
-    *comma = '\0';
-    calFactor1 = atof(data);
-    calFactor2 = atof(comma + 1);
-    saveCalibration();
-    webSocket.sendTXT(num, "ok");
-  } else {
-    webSocket.sendTXT(num, "err");
-  }
-}
-
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
@@ -77,17 +56,26 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
     case WStype_CONNECTED:
       break;
     case WStype_TEXT:
-      // If client sends "get", we blast the data
-      if (strncmp((char*)payload, "get", 3) == 0) {
+      // Check for calibration command "cal-INT1-INT2"
+      if (length >= 4 && strncmp((char*)payload, "cal|", 4) == 0) {
+        char* pEnd;
+        // Parse first integer starting after "cal-"
+        long val1 = strtol((char*)payload + 4, &pEnd, 10);
+        if (pEnd && *pEnd == '|') {
+           // Parse second integer starting after the delimiter
+           long val2 = strtol(pEnd + 1, NULL, 10);
+           
+           // Update calibration only if changed
+           if (s1CalFactX10000 != val1 || s2CalFactX10000 != val2) {
+             s1CalFactX10000 = val1;
+             s2CalFactX10000 = val2;
+             saveCalibration();
+           }
+        }
+      }
+      // Check for data request "get"
+      else if (length >= 3 && strncmp((char*)payload, "get", 3) == 0) {
         sendBinaryData(num);
-      }
-      // Get calibration factors
-      else if (strncmp((char*)payload, "getcal", 6) == 0) {
-        sendCalibration(num);
-      }
-      // Set calibration factors (format: "setcal:1.23,4.56")
-      else if (strncmp((char*)payload, "setcal:", 7) == 0) {
-        handleSetCalibration(num, (char*)payload);
       }
       break;
   }
