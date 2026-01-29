@@ -26,12 +26,6 @@ namespace SmartPower.Client.Services
 
         public void Start()
         {
-            _socket = new ClientWebSocket();
-            _socket.Options.Proxy = null;
-
-            _calSocket = new ClientWebSocket();
-            _calSocket.Options.Proxy = null;
-
             _ = StartConnectionLoop();
         }
 
@@ -41,55 +35,100 @@ namespace SmartPower.Client.Services
             {
                 try
                 {
-                    await _socket.ConnectAsync(new Uri(DEVICE_URL), _cts.Token);
-                    UpdateStatus("Connected");
-
-                    byte[] receiveBuffer = new byte[TOTAL_BYTES];
-                    var bufferSegment = new ArraySegment<byte>(receiveBuffer);
-
-                    while (_socket.State == WebSocketState.Open && !_cts.IsCancellationRequested)
+                    if (await EnsureConnectedAsync())
                     {
-                        var startMillis = DateTime.Now.Millisecond;
+                        byte[] receiveBuffer = new byte[TOTAL_BYTES];
+                        var bufferSegment = new ArraySegment<byte>(receiveBuffer);
 
-                        var sendBuffer = Encoding.UTF8.GetBytes("get");
-                        await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
-
-                        int totalRead = 0;
-                        while (totalRead < TOTAL_BYTES && !_cts.IsCancellationRequested)
+                        while (_socket?.State == WebSocketState.Open && !_cts.IsCancellationRequested)
                         {
-                            var result = await _socket.ReceiveAsync(bufferSegment.Slice(totalRead, TOTAL_BYTES - totalRead), _cts.Token);
-                            if (result.MessageType == WebSocketMessageType.Close) break;
-                            totalRead += result.Count;
+                            var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                            var sendBuffer = Encoding.UTF8.GetBytes("get");
+                            await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
+
+                            int totalRead = 0;
+                            while (totalRead < TOTAL_BYTES && !_cts.IsCancellationRequested)
+                            {
+                                var result = await _socket.ReceiveAsync(bufferSegment.Slice(totalRead, TOTAL_BYTES - totalRead), _cts.Token);
+                                if (result.MessageType == WebSocketMessageType.Close) break;
+                                totalRead += result.Count;
+                            }
+
+                            if (totalRead == TOTAL_BYTES)
+                            {
+                                ProcessBinaryData(receiveBuffer);
+                            }
+
+                            var endTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                            var duration = (int)(endTime - startTime);
+
+                            await Task.Delay(Math.Max(300 - duration, 0), _cts.Token);
                         }
-
-                        if (totalRead == TOTAL_BYTES)
-                        {
-                            ProcessBinaryData(receiveBuffer);
-                        }
-
-                        var endMillis = DateTime.Now.Millisecond;
-                        var durationMillis = endMillis - startMillis;
-
-                        //await Application.Current.Windows[0].Page.DisplayAlertAsync("Debug", $"Duration: {durationMillis} ms", "OK");
-                        await Task.Delay(Math.Max(300 - durationMillis, 0), _cts.Token);
                     }
                 }
                 catch (OperationCanceledException)
                 {
                     break;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     if (_cts.IsCancellationRequested) break;
                     UpdateStatus("Retrying...");
-                    try
-                    {
-                        await Task.Delay(300, _cts.Token);
-                    }
-                    catch (OperationCanceledException) { break; }
+                    await CloseConnectionAsync();
+                    try { await Task.Delay(300, _cts.Token); } catch { break; }
                 }
             }
             UpdateStatus("Disconnected");
+        }
+
+        private async Task<bool> EnsureConnectedAsync()
+        {
+            if (_socket?.State == WebSocketState.Open) return true;
+
+            await CloseConnectionAsync();
+
+            try
+            {
+                UpdateStatus("Connecting...");
+                _socket = new ClientWebSocket();
+                _socket.Options.Proxy = null;
+                _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(5);
+
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, timeoutCts.Token);
+
+                await _socket.ConnectAsync(new Uri(DEVICE_URL), linkedCts.Token);
+                UpdateStatus("Connected");
+                return true;
+            }
+            catch (Exception)
+            {
+                UpdateStatus("Connection Failed");
+                await CloseConnectionAsync();
+                return false;
+            }
+        }
+
+        private async Task CloseConnectionAsync()
+        {
+            if (_socket != null)
+            {
+                try
+                {
+                    if (_socket.State == WebSocketState.Open || _socket.State == WebSocketState.CloseReceived)
+                    {
+                        using var closeCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                        await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", closeCts.Token);
+                    }
+                }
+                catch { }
+                finally
+                {
+                    _socket.Dispose();
+                    _socket = null;
+                }
+            }
         }
 
         private void UpdateStatus(string status)
