@@ -7,7 +7,7 @@ namespace SmartPower.Client.Services
 {
     public class DeviceService : IDisposable
     {
-        private const string DEVICE_URL = "ws://192.168.100.33:81";
+        private const string DEVICE_URL = "ws://192.168.4.1:81";
         private const int HEADER_BYTES = 8;      // 2 ints (cal1, cal2)
         private const int SAMPLE_BYTES = 24000;  // 2000 samples * 12 bytes
         private const int TOTAL_BYTES = HEADER_BYTES + SAMPLE_BYTES; // 24,008 bytes
@@ -49,6 +49,8 @@ namespace SmartPower.Client.Services
 
                     while (_socket.State == WebSocketState.Open && !_cts.IsCancellationRequested)
                     {
+                        var startMillis = DateTime.Now.Millisecond;
+
                         var sendBuffer = Encoding.UTF8.GetBytes("get");
                         await _socket.SendAsync(new ArraySegment<byte>(sendBuffer), WebSocketMessageType.Text, true, _cts.Token);
 
@@ -65,7 +67,11 @@ namespace SmartPower.Client.Services
                             ProcessBinaryData(receiveBuffer);
                         }
 
-                        await Task.Delay(300, _cts.Token);
+                        var endMillis = DateTime.Now.Millisecond;
+                        var durationMillis = endMillis - startMillis;
+
+                        //await Application.Current.Windows[0].Page.DisplayAlertAsync("Debug", $"Duration: {durationMillis} ms", "OK");
+                        await Task.Delay(Math.Max(300 - durationMillis, 0), _cts.Token);
                     }
                 }
                 catch (OperationCanceledException)

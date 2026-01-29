@@ -1,0 +1,10 @@
+<api type="debug" assembly-name="SmartPower.Client" mvid="0b570e1cebcb4fd6804bea88cfc4a51a">
+  <java-to-managed>
+    <entry java-name="crc6456caca9cc4c2bc2b/MainActivity" managed-name="SmartPower.Client.MainActivity, SmartPower.Client" managed-type-token-id="33554442" />
+    <entry java-name="crc6456caca9cc4c2bc2b/MainApplication" managed-name="SmartPower.Client.MainApplication, SmartPower.Client" managed-type-token-id="33554443" />
+  </java-to-managed>
+  <managed-to-java>
+    <entry java-name="crc6456caca9cc4c2bc2b/MainActivity" managed-name="SmartPower.Client.MainActivity, SmartPower.Client" managed-type-token-id="33554442" />
+    <entry java-name="crc6456caca9cc4c2bc2b/MainApplication" managed-name="SmartPower.Client.MainApplication, SmartPower.Client" managed-type-token-id="33554443" />
+  </managed-to-java>
+</api>

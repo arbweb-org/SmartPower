@@ -12,6 +12,7 @@ namespace SmartPower.Client
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddSingleton<Services.DeviceService>();
+            builder.Services.AddSingleton<Services.StorageService>();
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();

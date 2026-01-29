@@ -9,13 +9,10 @@
 #include "smartCalibration.h"
 
 // WiFi Configuration
-const char* ssid = "WE_D2D139";
-const char* password = "e6c37eb3";
+const char* ssid = "SmartPower";
+const char* password = "12345678";
 
-// Static IP Configuration
-IPAddress local_IP(192, 168, 100, 33);
-IPAddress gateway(192, 168, 100, 1);
-IPAddress subnet(255, 255, 255, 0);
+
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -84,25 +81,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
 void initWiFi() {
   digitalWrite(LED_BUILTIN, HIGH);
 
-  if (!WiFi.config(local_IP, gateway, subnet)) {
-    delay(1000);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(1000);
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(1000);
+  // Start Access Point with 1 connection limit
+  // Parameters: ssid, password, channel, hidden, max_connection
+  if (!WiFi.softAP(ssid, password, 1, 0, 1)) {
     digitalWrite(LED_BUILTIN, LOW);
     return;
   }
-
-  digitalWrite(LED_BUILTIN, LOW);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(250);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(250);
-  }
-  digitalWrite(LED_BUILTIN, HIGH);
 
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);

@@ -12,12 +12,12 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>gmohgrowc0</Fingerprint>
-      <Integrity>GI2MdIGjrRLmUPMNYdtYpTOb77u+qpksiX6eOqAe8nI=</Integrity>
+      <Fingerprint>p8k26fdc4i</Fingerprint>
+      <Integrity>B/sJubSiucPpqFK6uJs5Z79mmUP0RSg2ZdggJgzR8gw=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <FileLength>1065</FileLength>
-      <LastWriteTime>Sat, 24 Jan 2026 11:17:18 GMT</LastWriteTime>
+      <FileLength>1045</FileLength>
+      <LastWriteTime>Thu, 29 Jan 2026 16:22:22 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\app.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\index.html'))">
@@ -97,7 +97,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <FileLength>54</FileLength>
-      <LastWriteTime>Sun, 25 Jan 2026 18:50:48 GMT</LastWriteTime>
+      <LastWriteTime>Thu, 29 Jan 2026 21:15:34 GMT</LastWriteTime>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\SmartPower.Client.styles.css'))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\_framework\blazor.modules.json'))">

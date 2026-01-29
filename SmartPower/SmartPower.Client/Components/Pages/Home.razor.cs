@@ -1,12 +1,21 @@
-﻿using SmartPower.Client.Models;
+﻿using Microsoft.AspNetCore.Components;
+using SmartPower.Client.Models;
 using System.Text;
 
 namespace SmartPower.Client.Components.Pages;
 
 public partial class Home : IDisposable
 {
-    [Microsoft.AspNetCore.Components.Inject]
+    [Inject]
     public Services.DeviceService DeviceService { get; set; } = default!;
+
+    [Inject]
+    public Services.StorageService StorageService { get; set; } = default!;
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    private bool _isLogging = false;
 
     private const int WINDOW_MS = 1000; // 1 Second window
     private uint lastMicros = 0;
@@ -20,6 +29,7 @@ public partial class Home : IDisposable
     // Calibration factors (received from ESP32 as Ints x 10000)
     protected int _s1CalFactX10000 = 10000;
     protected int _s2CalFactX10000 = 10000;
+    protected int _lastRms; // Total RMS value in mA
     private int _lastRms1; // Current s1 RMS value in mA for calibration prompt
     private int _lastRms2; // Current s2 RMS value in mA for calibration prompt
 
@@ -171,11 +181,13 @@ public partial class Home : IDisposable
         if (rmsS1 < 1000)
         {
             // Use S1
+            _lastRms = (int)rmsS1;
             SaveChunck(samplesS1, rmsS1);
         }
         else
         {
             // Use S2
+            _lastRms = (int)rmsS2;
             SaveChunck(samplesS2, rmsS2);
         }
     }
@@ -186,8 +198,41 @@ public partial class Home : IDisposable
         {
             _masterBuffer.Enqueue((int)reading);
         }
-        
+
         _rms.Enqueue((int)rms);
+
+        if (!_isLogging)
+        {
+            return;
+        }
+
+        StorageService.AppendReadings(readings); // LOG CALIBRATED SAMPLES
+        StorageService.AppendRms((int)rms);
+    }
+
+    private void DrawCurves()
+    {
+        var crn = new StringBuilder();
+        var rms = new StringBuilder();
+        float scaleY = 3000f / 60000f; // 3000 pixels for 60,000mA (-30A to 30A)
+
+        for (int i = 0; i < _masterBuffer.Count; i++)
+        {
+            int x = i;
+            int y = (int)(1500 - (_masterBuffer[i] * scaleY));
+
+            crn.Append($"{x},{y} ");
+        }
+
+        for (int i = 0; i < _rms.Count; i++)
+        {
+            double x = i * 200;
+            double y = (int)(1500 - (_rms[i] * scaleY));
+            rms.Append($"{x},{y} ");
+        }
+
+        _pointsCrn = crn.ToString();
+        _pointsRms = rms.ToString();
     }
 
     private async Task Calibrate()
@@ -236,34 +281,25 @@ public partial class Home : IDisposable
         }
     }
 
-    private void DrawCurves()
+    private void ToggleLogging()
     {
-        var crn = new StringBuilder();
-        var rms = new StringBuilder();
-        float scaleY = 240f / 60000f; // 240 pixels for 60,000mA (-30A to 30A)
-
-        for (int i = 0; i < _masterBuffer.Count; i++)
+        _isLogging = !_isLogging;
+        if (!_isLogging)
         {
-            double x = i;
-            double y = 120 - (_masterBuffer[i] * scaleY);
-
-            crn.Append($"{x},{y} ");
+            StorageService.Close();
         }
+        InvokeAsync(StateHasChanged);
+    }
 
-        for (int i = 0; i < _rms.Count; i++)
-        {
-            double x = i * 200;
-            double y = 120 - (_rms[i] * scaleY);
-            rms.Append($"{x},{y} ");
-        }
-
-        _pointsCrn = crn.ToString();
-        _pointsRms = rms.ToString();
+    private void GoToLogs()
+    {
+        NavigationManager.NavigateTo("/logs");
     }
 
     public void Dispose()
     {
         DeviceService.OnDataReceived -= HandleDataReceived;
         DeviceService.OnStatusChanged -= HandleStatusChanged;
+        StorageService.Close();
     }
 }

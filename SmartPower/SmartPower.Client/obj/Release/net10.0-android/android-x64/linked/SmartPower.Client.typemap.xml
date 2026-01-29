@@ -1,0 +1,8 @@
+<api type="release" assembly-name="SmartPower.Client" mvid="9046ea4941634032b7931204e2d7e507">
+  <module assembly-name="SmartPower.Client" mvid="9046ea4941634032b7931204e2d7e507" mvid-bytes="SepGkGNBMkC3kxIE4tflBw==">
+    <types-scratch>
+      <entry key="crc6456caca9cc4c2bc2b/MainActivity" java-name="crc6456caca9cc4c2bc2b/MainActivity" managed-type-name="SmartPower.Client.MainActivity" token="33554441" />
+      <entry key="crc6456caca9cc4c2bc2b/MainApplication" java-name="crc6456caca9cc4c2bc2b/MainApplication" managed-type-name="SmartPower.Client.MainApplication" token="33554442" />
+    </types-scratch>
+  </module>
+</api>

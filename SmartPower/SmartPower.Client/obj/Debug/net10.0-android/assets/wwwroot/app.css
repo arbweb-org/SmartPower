@@ -1,0 +1,59 @@
+.monitor-container {
+    background: #f8f9fa; /* Light grey background */
+    padding: 1.5rem;
+    color: #212529; /* Dark text */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.svg-wrapper {
+    background: #FFFFFF; /* High contrast for light theme */
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+}
+
+.chart-svg {
+    width: 100%;
+    height: 450px;
+    display: block;
+}
+
+.line-s1 {
+    stroke: #007AFF;
+    fill: none;
+    stroke-width: 2;
+}
+
+.line-s2 {
+    stroke: #FF3B30;
+    fill: none;
+    stroke-width: 2;
+}
+
+/* Status Colors */
+.status-chip.connected {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-chip.connecting {
+    color: #fd7e14;
+}
+
+.status-chip.error {
+    color: #dc3545;
+}
+
+.footer-info {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
