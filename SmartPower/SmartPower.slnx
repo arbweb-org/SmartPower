@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="SmartPower.Client/SmartPower.Client.csproj">
-    <Deploy Solution="Debug|*" />
-  </Project>
-</Solution>
