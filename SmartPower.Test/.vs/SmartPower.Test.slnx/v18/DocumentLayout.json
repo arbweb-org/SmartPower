@@ -1,0 +1,79 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|d:\\projects\\github\\arbweb-org\\smartpower\\smartpower.test\\smartpower.test\\components\\pages\\home.razor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|solutionrelative:smartpower.test\\components\\pages\\home.razor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|d:\\projects\\github\\arbweb-org\\smartpower\\smartpower.test\\smartpower.test\\arduinoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|solutionrelative:smartpower.test\\arduinoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|d:\\projects\\github\\arbweb-org\\smartpower\\smartpower.test\\smartpower.test\\serialtransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{263C539A-2DD1-127D-C516-D38E175CE954}|SmartPower.Test\\SmartPower.Test.csproj|solutionrelative:smartpower.test\\serialtransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0b70bd46-6688-36ac-9352-407daa38242e}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ArduinoService.cs",
+              "DocumentMoniker": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\ArduinoService.cs",
+              "RelativeDocumentMoniker": "SmartPower.Test\\ArduinoService.cs",
+              "ToolTip": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\ArduinoService.cs",
+              "RelativeToolTip": "SmartPower.Test\\ArduinoService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T04:39:14.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "SerialTransport.cs",
+              "DocumentMoniker": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\SerialTransport.cs",
+              "RelativeDocumentMoniker": "SmartPower.Test\\SerialTransport.cs",
+              "ToolTip": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\SerialTransport.cs",
+              "RelativeToolTip": "SmartPower.Test\\SerialTransport.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T04:38:37.352Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Home.razor.cs",
+              "DocumentMoniker": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\Components\\Pages\\Home.razor.cs",
+              "RelativeDocumentMoniker": "SmartPower.Test\\Components\\Pages\\Home.razor.cs",
+              "ToolTip": "D:\\Projects\\GitHub\\arbweb-org\\SmartPower\\SmartPower.Test\\SmartPower.Test\\Components\\Pages\\Home.razor.cs",
+              "RelativeToolTip": "SmartPower.Test\\Components\\Pages\\Home.razor.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAAQAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-22T04:23:16.433Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
