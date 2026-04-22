@@ -3,11 +3,11 @@
 
 #include "smartCommon.h"
 
-const int relayPins[] = {6, 7, 8, 9};
+const int relayPins[] = {18, 19, 22, 23};
 
 void initControl() {
   for (int i = 0; i < 4; i++) {
-    pinMode(pins[i], OUTPUT);
+    pinMode(relayPins[i], OUTPUT);
   }
 }
 
