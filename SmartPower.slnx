@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SmartPower.Publisher/SmartPower.Publisher.csproj" />
+  <Project Path="SmartPower.Server/SmartPower.Server.csproj" />
+  <Project Path="SmartPower.Test/SmartPower.Test.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+</Solution>

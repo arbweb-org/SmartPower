@@ -1,0 +1,38 @@
+﻿@page "/"
+
+<h2 style="text-align:center">XCooling Monitor</h2>
+<br /><br />
+
+<div class="mb-3">
+    <label for="portInput"><b>@(isConnected ? "Connected" : "Disconnected")</b></label>
+    <button class="btn btn-success" style="margin-left:10px;" @onclick="RefreshParameters">@(isConnected ? "Refresh" : "Connect")</button>
+</div>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color:red">Error: @errorMessage</p>
+}
+else
+{
+    <div>
+        <p><b>Box Temperature:</b> @(temp1?.ToString("F1") ?? "-") °C</p>
+        <p><b>Evaporator Temperature:</b> @(temp2?.ToString("F1") ?? "-") °C</p>
+        <p><b>Compressor Current:</b> @(current1?.ToString("F2") ?? "-") A</p>
+    </div>
+
+    <div style="margin-top:20px;">
+    </div>
+
+    @foreach (var relay in Relays)
+    {
+        <div style="margin-top:10px;">
+            <button class=@RelayButtonClass(relay.IsOn) style="width: 100%" @onclick="() => ToggleRelay(relay.Index)">
+                @RelayButtonText(relay.IsOn, relay.Name)
+            </button>
+        </div>
+    }
+}

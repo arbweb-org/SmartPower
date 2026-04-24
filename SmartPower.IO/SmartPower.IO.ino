@@ -70,14 +70,21 @@ void loop() {
   if (Serial.available()) {
     char cmd = Serial.read();
 
+    // --- Shakehand
+    if (cmd == 'X') {
+      Serial.println("OK");
+    }
+
     // --- Relay ON ('0'–'3') ---
-    if (cmd >= '0' && cmd <= '3') {
+    else if (cmd >= '0' && cmd <= '3') {
       digitalWrite(relayPins[cmd - '0'], LOW);
+      Serial.println("OK");
     }
 
     // --- Relay OFF ('4'–'7') ---
     else if (cmd >= '4' && cmd <= '7') {
       digitalWrite(relayPins[cmd - '4'], HIGH);
+      Serial.println("OK");
     }
 
     // --- Temp1 ---
