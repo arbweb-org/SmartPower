@@ -7,8 +7,7 @@ namespace SmartPower.Test
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
-            builder
-                .UseMauiApp<App>();
+            builder.UseMauiApp<App>();
 
             builder.Services.AddMauiBlazorWebView();
 

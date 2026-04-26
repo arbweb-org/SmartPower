@@ -1,9 +1,8 @@
-using RJCP.IO.Ports;
 using System.IO.Ports;
 
 public sealed class SerialTransport : IDisposable
 {
-    private SerialPortStream _port = new();
+    private SerialPort _port = new();
     private readonly object _lock = new();
 
     Boolean TryConnect(string portName)
@@ -12,7 +11,7 @@ public sealed class SerialTransport : IDisposable
 
         try
         {
-            _port = new SerialPortStream(portName, 9600)
+            _port = new SerialPort(portName, 9600)
             {
                 NewLine = "\n",
                 ReadTimeout = 1000,
@@ -21,9 +20,11 @@ public sealed class SerialTransport : IDisposable
             };
 
             _port.Open();
+            Thread.Sleep(3000);
+
             return true;
         }
-        catch 
+        catch
         {
             return false;
         }
@@ -34,7 +35,6 @@ public sealed class SerialTransport : IDisposable
         try
         {
             _port.Write(new byte[] { (byte)'X' }, 0, 1);
-            _port.Flush();
             string response = _port.ReadLine().Trim();
             if (response == "OK") { return true; }
         }
@@ -58,7 +58,9 @@ public sealed class SerialTransport : IDisposable
             { return true; }
         }
 
-        var portNames = SerialPort.GetPortNames();
+        var portNames = SerialPort.GetPortNames().ToList();
+        if (!portNames.Contains("/dev/ttyUSB0")) portNames.Add("/dev/ttyUSB0");
+
         foreach (var portName in portNames)
         {
             if (TryConnect(portName))
@@ -80,7 +82,6 @@ public sealed class SerialTransport : IDisposable
             if (!EnsureConnected()) { throw new InvalidOperationException(); }
 
             _port.Write(new byte[] { cmd }, 0, 1);
-            _port.Flush();
 
             // Read until the NewLine string is encountered
             return _port.ReadLine().Trim() == "OK";
@@ -94,7 +95,6 @@ public sealed class SerialTransport : IDisposable
             if (!EnsureConnected()) { throw new InvalidOperationException(); }
 
             _port.Write(new byte[] { cmd }, 0, 1);
-            _port.Flush();
 
             // Read until the NewLine string is encountered
             return _port.ReadLine().Trim();

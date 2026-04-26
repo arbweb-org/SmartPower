@@ -6,6 +6,7 @@ namespace SmartPower.Publisher
         {
             var builder = Host.CreateApplicationBuilder(args);
             builder.Services.AddSingleton<ArduinoService>();
+            builder.Services.AddSystemd();        // Handles Linux systemd signals
             builder.Services.AddHostedService<Worker>();
 
             var host = builder.Build();
