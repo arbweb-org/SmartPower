@@ -7,7 +7,7 @@
 
     public int TargetTemp { get; set; } = 5;
     public int DefrostTemp { get; set; } = 10;
-    public int Differential { get; set; } = 1;
+    public int Differential { get; set; } = 5;
     public int DelayTime { get; set; } = 30;
     public int CoolingDuration { get; set; } = 10 * 60;
     public int DefrostDuration { get; set; } = 5 * 60;
@@ -31,6 +31,8 @@
 
     void TurnCompressorOff()
     {
+        if (!CompressorOn) { return; } // Keeps lastCompressorOff from being updated if compressor is already off
+
         CompressorOn = false;
         lastCompressorOff = DateTime.Now;
     }

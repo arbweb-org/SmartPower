@@ -9,27 +9,27 @@ public sealed class ArduinoService
         return _transport.SendCommand(command);
     }
 
-    public float GetTemp1()
+    public float? GetTemp1()
     {
-        string response = _transport.QueryData((byte)'8');
-        return float.TryParse(response, out float result) ? result : 0f;
+        string? response = _transport.QueryData((byte)'8');
+        return float.TryParse(response, out float result) ? result : null;
     }
 
-    public float GetTemp2()
+    public float? GetTemp2()
     {
-        string response = _transport.QueryData((byte)'9');
-        return float.TryParse(response, out float result) ? result : 0f;
+        string? response = _transport.QueryData((byte)'9');
+        return float.TryParse(response, out float result) ? result : null;
     }
 
-    public float GetRms1()
+    public float? GetRms1()
     {
-        string response = _transport.QueryData((byte)'B');
-        return float.TryParse(response, out float result) ? result : 0f;
+        string? response = _transport.QueryData((byte)'B');
+        return float.TryParse(response, out float result) ? result : null;
     }
 
-    public float GetRms2()
+    public float? GetRms2()
     {
-        string response = _transport.QueryData((byte)'A');
-        return float.TryParse(response, out float result) ? result : 0f;
+        string? response = _transport.QueryData((byte)'A');
+        return float.TryParse(response, out float result) ? result : null;
     }
 }

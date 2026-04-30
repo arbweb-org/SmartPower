@@ -1,0 +1,2 @@
+scp -O firmware.hex root@192.168.1.182:/tmp/
+avrdude -v -pm328p -carduino -P /dev/ttyUSB0 -b57600 -D -U flash:w:/tmp/firmware.hex:i
