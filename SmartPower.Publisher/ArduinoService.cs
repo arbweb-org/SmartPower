@@ -2,11 +2,20 @@ public sealed class ArduinoService
 {
     private SerialTransport _transport = new SerialTransport();
 
-    public Boolean TurnRelayOnOff(int relayIndex, bool OnOff)
+    public string Send(byte cmd)
     {
-        int onOff = OnOff ? 0 : 4;
-        byte command = (byte)(onOff + relayIndex + ((byte)'0'));
-        return _transport.SendCommand(command);
+        return _transport.QueryData(cmd); // send + read line
+    }
+
+    public string GetStatus()
+    {
+        return Send("GET");
+    }
+
+    public bool SetParam(string key, float value)
+    {
+        var res = Send($"SET {key} {value}");
+        return res == "OK";
     }
 
     public float? GetTemp1()
