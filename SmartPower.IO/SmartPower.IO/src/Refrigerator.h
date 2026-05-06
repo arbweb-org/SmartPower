@@ -9,13 +9,13 @@ class Refrigerator
 private:
     float _boxTemp = 0;
     float _evapTemp = 0;
-    bool _defrostStopped = false;
 
+    // State variables
+    bool _defrostStopped = false;
     unsigned long startTime;
     unsigned long lastCompressorOff;
 
     // Helper to get elapsed seconds
-
     unsigned long timeElapsed()
     {
         return (millis() - startTime) / 1000;
@@ -109,7 +109,12 @@ public:
         unsigned long coolingDuration = Params.CoolingDuration;
         unsigned long defrostDuration = Params.DefrostDuration;
 
-        if (elapsed < coolingDuration)
+        if (Params.DefrostDuration == 0) 
+        {
+            TurnDefrostOff();
+            _defrostStopped = false;
+        }
+        else if (elapsed < coolingDuration)
         {
             Cool();
         }
@@ -136,7 +141,7 @@ public:
 
     bool saveParameters(Parameters params)
     {
-        if (params.DelayTime < 30 || params.DefrostTemp < 1) 
+        if (params.DelayTime < 3 * 60 || params.DelayTime > 10 * 60 || params.DefrostTemp < 4 || params.DefrostTemp > 15) 
         { return false; }
 
         // 1. Generate a random "Transaction ID"

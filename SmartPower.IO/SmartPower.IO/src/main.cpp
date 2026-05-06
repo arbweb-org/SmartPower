@@ -3,7 +3,7 @@
 #include <DallasTemperature.h>
 #include "refrigerator.h"
 
-const int relayPins[] = {3, 2, 5, 4}; // 0: Compressor, 1: Defrost, 2: Fan, 3: Light
+const int relayPins[] = {2, 3, 4, 5}; // Compressor, Fan, Defrost, Light
 const int pinSensor1 = 7, pinSensor2 = 8;
 const int analogPin1 = A1, analogPin2 = A3;
 const int NUM_SAMPLES = 100, SAMPLE_DELAY_US = 200;
@@ -34,6 +34,7 @@ void setup() {
     digitalWrite(relayPins[i], HIGH);
     pinMode(relayPins[i], OUTPUT);
   }
+
   sensor1.begin();
   sensor2.begin();
   sensor1.requestTemperatures();
@@ -46,13 +47,26 @@ void setup() {
 void loopSerial() {
   if (!Serial.available()) return;
   char cmd = Serial.read();
+  // Handshake
   if (cmd == 'X') Serial.println("OK");
+  // Control relays
   else if (cmd >= '0' && cmd <= '3') { digitalWrite(relayPins[cmd - '0'], LOW); Serial.println("OK"); }
   else if (cmd >= '4' && cmd <= '7') { digitalWrite(relayPins[cmd - '4'], HIGH); Serial.println("OK"); }
+  // Read sensors
   else if (cmd == '8') { sensor1.requestTemperatures(); Serial.println(sensor1.getTempCByIndex(0)); }
   else if (cmd == '9') { sensor2.requestTemperatures(); Serial.println(sensor2.getTempCByIndex(0)); }
-  else if (cmd == 'A') Serial.println(readRMS(analogPin1));
-  else if (cmd == 'B') Serial.println(readRMS(analogPin2));
+  else if (cmd == 'A') { Serial.println(readRMS(analogPin1)); }
+  else if (cmd == 'B') { Serial.println(readRMS(analogPin2)); }
+  // Set parameters
+  else if (cmd == 'C') { }
+  else if (cmd == 'D') { }
+  else if (cmd == 'E') { }  
+  else if (cmd == 'F') { }
+  else if (cmd == 'G') { }
+  else if (cmd == 'H') { }
+  // Set sensors calibration factors
+  else if (cmd == 'U') { }
+  else if (cmd == 'V') { }
 }
 
 unsigned long lastLoopTime = 0;
@@ -68,7 +82,7 @@ void loopFridge() {
   fridge.loop(sensor1.getTempCByIndex(0), sensor2.getTempCByIndex(0));
 
   digitalWrite(relayPins[0], fridge.CompressorOn ? LOW : HIGH);
-  digitalWrite(relayPins[1], fridge.DefrostOn ? LOW : HIGH);
+  digitalWrite(relayPins[2], fridge.DefrostOn ? LOW : HIGH);
 
   lastLoopTime = millis();
 }
