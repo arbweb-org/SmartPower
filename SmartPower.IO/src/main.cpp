@@ -30,33 +30,46 @@ void setup() {
   sensor2.setWaitForConversion(false);
 }
 
+void sendOK() {
+  Serial.println("OK");
+}
+
 void loopSerial() {
   if (!Serial.available()) return;
   char cmd = Serial.read();
 
   // Handshake
+  // Returns "OK" to confirm the device is responsive
   if (cmd == 'X') Serial.println("OK");
+
   // Control relays (For testing, '0'-'3' turn on, '4'-'7' turn off)
-  else if (cmd >= '0' && cmd <= '3') { digitalWrite(relayPins[cmd - '0'], LOW); Serial.println("OK"); }
-  else if (cmd >= '4' && cmd <= '7') { digitalWrite(relayPins[cmd - '4'], HIGH); Serial.println("OK"); }
+  // Returns "OK" after setting the relay state
+  else if (cmd >= '0' && cmd <= '3') { digitalWrite(relayPins[cmd - '0'], LOW); sendOK(); }
+  else if (cmd >= '4' && cmd <= '7') { digitalWrite(relayPins[cmd - '4'], HIGH); sendOK(); }
   
-  // Read sensors
+  // Read temperatures (For testing, '8' reads sensor1, '9' reads sensor2)
+  // Returns temperature in Celsius with 2 decimal places, e.g. "5.25"
   else if (cmd == '8') { sensor1.requestTemperatures(); Serial.println(sensor1.getTempCByIndex(0)); }
   else if (cmd == '9') { sensor2.requestTemperatures(); Serial.println(sensor2.getTempCByIndex(0)); }
+
+  // Read multimeter RMS values
+  // Returns: "Voltage|Current0|Current1", e.g. "120.00|0.50|0.30"
   else if (cmd == 'A') { Serial.println(multimeter.readRMS()); }
 
   // Get parameters
+  // Returns: "TargetTemp|DefrostTemp|Differential|DelayTime|CoolingDuration|DefrostDuration"
   else if (cmd == 'P') {
     Refrigerator::Parameters p = fridge.getParameters();
-    Serial.print(p.TargetTemp); Serial.print(","); 
-    Serial.print(p.DefrostTemp); Serial.print(","); 
-    Serial.print(p.Differential); Serial.print(","); 
-    Serial.print(p.DelayTime); Serial.print(","); 
-    Serial.print(p.CoolingDuration); Serial.print(","); 
+    Serial.print(p.TargetTemp); Serial.print("|"); 
+    Serial.print(p.DefrostTemp); Serial.print("|"); 
+    Serial.print(p.Differential); Serial.print("|"); 
+    Serial.print(p.DelayTime); Serial.print("|"); 
+    Serial.print(p.CoolingDuration); Serial.print("|"); 
     Serial.println(p.DefrostDuration);
   }
 
   // Update parameters (For simplicity, we assume the new value is sent immediately after the command)
+  // Retrns "OK" if successful, "ERROR" if validation fails or EEPROM write fails
   else if (cmd == 'C') { Serial.println(fridge.updateTargetTemp(Serial.parseInt())); }
   else if (cmd == 'D') { Serial.println(fridge.updateDefrostTemp(Serial.parseInt())); }
   else if (cmd == 'E') { Serial.println(fridge.updateDifferential(Serial.parseInt())); }
@@ -65,12 +78,14 @@ void loopSerial() {
   else if (cmd == 'H') { Serial.println(fridge.updateDefrostDuration(Serial.parseInt())); }
 
   // Get calibration
+  // Returns: "CurrentCal|VoltageCal"
   else if (cmd == 'K') {
-    Serial.print(multimeter.Params.CurrentCal); Serial.print(",");
+    Serial.print(multimeter.Params.CurrentCal); Serial.print("|");
     Serial.println(multimeter.Params.VoltageCal);
   }
   
-  // Update calibration
+  // Update calibration (For simplicity, we assume the new value is sent immediately after the command)
+  // Returns "OK" if successful, "ERROR" if validation fails or EEPROM write fails
   else if (cmd == 'U') { Serial.println(multimeter.updateCurrentCal(Serial.parseFloat())); }
   else if (cmd == 'V') { Serial.println(multimeter.updateVoltageCal(Serial.parseFloat())); }
 }

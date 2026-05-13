@@ -69,9 +69,9 @@ public:
         float i0Final = calculateRMS(sumI0, sumSqI0) * currentCal;
         float i1Final = calculateRMS(sumI1, sumSqI1) * currentCal;
 
-        // Build the string: "Voltage-Current0-Current1"
+        // Build the string: "Voltage|Current0|Current1"
         // The second parameter in String(value, decimalPlaces) controls precision
-        String result = String(vFinal, 0) + "-" + String(i0Final, 2) + "-" + String(i1Final, 2);
+        String result = String(vFinal, 0) + "|" + String(i0Final, 2) + "|" + String(i1Final, 2);
 
         return result;
     }

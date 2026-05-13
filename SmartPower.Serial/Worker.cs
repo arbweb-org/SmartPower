@@ -1,15 +1,11 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using MQTTnet;
 
 namespace SmartPower.Publisher
 {
     public class Worker : BackgroundService
     {
         private readonly ArduinoService _arduino;
-        private readonly Refrigerator _fridge = new Refrigerator();
-        private IMqttClient _client;
 
         public Worker(ArduinoService arduino)
         {
