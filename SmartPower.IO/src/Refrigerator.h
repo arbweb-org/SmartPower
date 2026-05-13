@@ -5,8 +5,10 @@
 #include <EEPROM.h>
 
 class Refrigerator
-{
+{    
 private:
+    const int PARAM_ADDR = 0;
+
     float _boxTemp = 0;
     float _evapTemp = 0;
 
@@ -134,7 +136,7 @@ public:
     Parameters getParameters()
     {
         Parameters params;
-        EEPROM.get(0, params);
+        EEPROM.get(PARAM_ADDR, params);
 
         return params;
     }
@@ -152,7 +154,7 @@ public:
         params.EndFlag = transactionID;
 
         // 2. Write to EEPROM
-        EEPROM.put(0, params);
+        EEPROM.put(PARAM_ADDR, params);
 
         // 3. Verify integrity
         Parameters verified = getParameters();
@@ -174,10 +176,41 @@ public:
         Params.DefrostTemp = 10;
         Params.Differential = 5;
         Params.DelayTime = 3 * 60;
-        Params.CoolingDuration = 15 * 60;
-        Params.DefrostDuration = 5 * 60;
+        Params.CoolingDuration = 6 * 60 * 60;
+        Params.DefrostDuration = 30 * 60;
 
         saveParameters(Params); 
+    }
+
+    // Update individual parameters with validation and persistence
+    String updateTargetTemp(int val) {
+        Params.TargetTemp = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
+    }
+
+    String updateDefrostTemp(int val) {
+        Params.DefrostTemp = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
+    }
+
+    String updateDifferential(int val) {
+        Params.Differential = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
+    }
+
+    String updateDelayTime(int val) {
+        Params.DelayTime = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
+    }
+
+    String updateCoolingDuration(int val) {
+        Params.CoolingDuration = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
+    }
+
+    String updateDefrostDuration(int val) {
+        Params.DefrostDuration = val;
+        return saveParameters(Params) ? "OK" : "ERROR";
     }
 };
 

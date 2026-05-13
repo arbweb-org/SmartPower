@@ -24,7 +24,8 @@
              To disable, remove this line.
              For individual files, you can override by setting Inflator metadata:
                <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
-               <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
+               <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation)
+        -->
         <MauiXamlInflator>SourceGen</MauiXamlInflator>
 
         <!-- Display name -->

@@ -2,29 +2,15 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "refrigerator.h"
+#include "Multimeter.h"
 
 const int relayPins[] = {2, 3, 4, 5}; // Compressor, Fan, Defrost, Light
 const int pinSensor1 = 7, pinSensor2 = 8;
-const int analogPin1 = A1, analogPin2 = A3;
-const int NUM_SAMPLES = 100, SAMPLE_DELAY_US = 200;
 
 OneWire oneWire1(pinSensor1), oneWire2(pinSensor2);
 DallasTemperature sensor1(&oneWire1), sensor2(&oneWire2);
 Refrigerator fridge;
-
-float readRMS(int pin) {
-    long sum = 0, sumSq = 0;
-    unsigned long startMicros = micros();
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        while (micros() - startMicros < (unsigned long)i * SAMPLE_DELAY_US);
-        int v = analogRead(pin);
-        sum += v;
-        sumSq += (long)v * v;
-    }
-    float mean = (float)sum / NUM_SAMPLES;
-    float diff = ((float)sumSq / NUM_SAMPLES) - (mean * mean);
-    return (diff > 0) ? sqrt(diff) : 0.0;
-}
+Multimeter multimeter;
 
 void setup() {
   randomSeed(analogRead(0));
@@ -47,26 +33,46 @@ void setup() {
 void loopSerial() {
   if (!Serial.available()) return;
   char cmd = Serial.read();
+
   // Handshake
   if (cmd == 'X') Serial.println("OK");
-  // Control relays
+  // Control relays (For testing, '0'-'3' turn on, '4'-'7' turn off)
   else if (cmd >= '0' && cmd <= '3') { digitalWrite(relayPins[cmd - '0'], LOW); Serial.println("OK"); }
   else if (cmd >= '4' && cmd <= '7') { digitalWrite(relayPins[cmd - '4'], HIGH); Serial.println("OK"); }
+  
   // Read sensors
   else if (cmd == '8') { sensor1.requestTemperatures(); Serial.println(sensor1.getTempCByIndex(0)); }
   else if (cmd == '9') { sensor2.requestTemperatures(); Serial.println(sensor2.getTempCByIndex(0)); }
-  else if (cmd == 'A') { Serial.println(readRMS(analogPin1)); }
-  else if (cmd == 'B') { Serial.println(readRMS(analogPin2)); }
-  // Set parameters
-  else if (cmd == 'C') { }
-  else if (cmd == 'D') { }
-  else if (cmd == 'E') { }  
-  else if (cmd == 'F') { }
-  else if (cmd == 'G') { }
-  else if (cmd == 'H') { }
-  // Set sensors calibration factors
-  else if (cmd == 'U') { }
-  else if (cmd == 'V') { }
+  else if (cmd == 'A') { Serial.println(multimeter.readRMS()); }
+
+  // Get parameters
+  else if (cmd == 'P') {
+    Refrigerator::Parameters p = fridge.getParameters();
+    Serial.print(p.TargetTemp); Serial.print(","); 
+    Serial.print(p.DefrostTemp); Serial.print(","); 
+    Serial.print(p.Differential); Serial.print(","); 
+    Serial.print(p.DelayTime); Serial.print(","); 
+    Serial.print(p.CoolingDuration); Serial.print(","); 
+    Serial.println(p.DefrostDuration);
+  }
+
+  // Update parameters (For simplicity, we assume the new value is sent immediately after the command)
+  else if (cmd == 'C') { Serial.println(fridge.updateTargetTemp(Serial.parseInt())); }
+  else if (cmd == 'D') { Serial.println(fridge.updateDefrostTemp(Serial.parseInt())); }
+  else if (cmd == 'E') { Serial.println(fridge.updateDifferential(Serial.parseInt())); }
+  else if (cmd == 'F') { Serial.println(fridge.updateDelayTime(Serial.parseInt())); }
+  else if (cmd == 'G') { Serial.println(fridge.updateCoolingDuration(Serial.parseInt())); }
+  else if (cmd == 'H') { Serial.println(fridge.updateDefrostDuration(Serial.parseInt())); }
+
+  // Get calibration
+  else if (cmd == 'K') {
+    Serial.print(multimeter.Params.CurrentCal); Serial.print(",");
+    Serial.println(multimeter.Params.VoltageCal);
+  }
+  
+  // Update calibration
+  else if (cmd == 'U') { Serial.println(multimeter.updateCurrentCal(Serial.parseFloat())); }
+  else if (cmd == 'V') { Serial.println(multimeter.updateVoltageCal(Serial.parseFloat())); }
 }
 
 unsigned long lastLoopTime = 0;
@@ -78,7 +84,8 @@ void loopFridge() {
 
   sensor1.requestTemperatures();
   sensor2.requestTemperatures();
-    
+
+  multimeter.loop();
   fridge.loop(sensor1.getTempCByIndex(0), sensor2.getTempCByIndex(0));
 
   digitalWrite(relayPins[0], fridge.CompressorOn ? LOW : HIGH);
