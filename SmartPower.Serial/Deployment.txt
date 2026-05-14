@@ -1,0 +1,72 @@
+# Install dependencies
+sudo apt update && sudo apt install -y libicu-dev
+sudo apt update && sudo apt install -y build-essential libnserial-dev
+
+# For testing purposes
+sudo apt update
+sudo apt install -y python3-serial
+nano test_usb.py
+
+
+# Publish
+dotnet publish -c Release -r linux-arm64 --self-contained true -p:PublishSingleFile=true
+
+# Stop service
+sudo systemctl stop smartpower.serial
+
+# Clean old files
+cd /opt/smartpower
+ls
+rm -rf *
+ls
+
+# Copy
+scp -O -r * root@DietPi.local:/opt/smartpower.serial
+
+# Install
+sudo chmod +x /opt/smartpower.serial/SmartPower.Serial
+
+sudo nano /etc/systemd/system/smartpower.serial.service
+
+# Service file contents
+[Unit]
+Description=SmartPower.Serial Worker Service
+
+[Service]
+Type=notify
+ExecStart=/opt/smartpower.serial/SmartPower.Serial
+WorkingDirectory=/opt/smartpower.serial
+User=root
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+
+# Load the new file
+sudo systemctl daemon-reload
+
+# Enable it to start on boot
+sudo systemctl enable smartpower.serial
+
+# Start it right now
+sudo systemctl start smartpower.serial
+
+# Check status
+systemctl status smartpower.serial
+
+# To manual debug
+cd /opt/smartpower.serial
+./SmartPower.Serial
+
+# Resolve DietPi.local
+apt update
+apt install avahi-daemon
+
+systemctl enable avahi-daemon
+systemctl start avahi-daemon
+
+# Diagnostics
+screen /dev/ttyUSB0 9600
+
+curl --unix-socket /tmp/smartpower.serial.sock http://localhost/get

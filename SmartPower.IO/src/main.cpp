@@ -54,7 +54,7 @@ void loopSerial() {
 
   // Read multimeter RMS values
   // Returns: "Voltage|Current0|Current1", e.g. "120.00|0.50|0.30"
-  else if (cmd == 'A') { Serial.println(multimeter.readRMS()); }
+  else if (cmd == 'R') { Serial.println(multimeter.readRMS()); }
 
   // Get parameters
   // Returns: "TargetTemp|DefrostTemp|Differential|DelayTime|CoolingDuration|DefrostDuration"
@@ -70,23 +70,23 @@ void loopSerial() {
 
   // Update parameters (For simplicity, we assume the new value is sent immediately after the command)
   // Retrns "OK" if successful, "ERROR" if validation fails or EEPROM write fails
-  else if (cmd == 'C') { Serial.println(fridge.updateTargetTemp(Serial.parseInt())); }
-  else if (cmd == 'D') { Serial.println(fridge.updateDefrostTemp(Serial.parseInt())); }
-  else if (cmd == 'E') { Serial.println(fridge.updateDifferential(Serial.parseInt())); }
-  else if (cmd == 'F') { Serial.println(fridge.updateDelayTime(Serial.parseInt())); }
-  else if (cmd == 'G') { Serial.println(fridge.updateCoolingDuration(Serial.parseInt())); }
-  else if (cmd == 'H') { Serial.println(fridge.updateDefrostDuration(Serial.parseInt())); }
+  else if (cmd == 'D') { Serial.println(fridge.updateTargetTemp(Serial.parseInt())); }
+  else if (cmd == 'E') { Serial.println(fridge.updateDefrostTemp(Serial.parseInt())); }
+  else if (cmd == 'F') { Serial.println(fridge.updateDifferential(Serial.parseInt())); }
+  else if (cmd == 'G') { Serial.println(fridge.updateDelayTime(Serial.parseInt())); }
+  else if (cmd == 'H') { Serial.println(fridge.updateCoolingDuration(Serial.parseInt())); }
+  else if (cmd == 'I') { Serial.println(fridge.updateDefrostDuration(Serial.parseInt())); }
 
   // Get calibration
   // Returns: "CurrentCal|VoltageCal"
-  else if (cmd == 'K') {
+  else if (cmd == 'C') {
     Serial.print(multimeter.Params.CurrentCal); Serial.print("|");
     Serial.println(multimeter.Params.VoltageCal);
   }
   
   // Update calibration (For simplicity, we assume the new value is sent immediately after the command)
   // Returns "OK" if successful, "ERROR" if validation fails or EEPROM write fails
-  else if (cmd == 'U') { Serial.println(multimeter.updateCurrentCal(Serial.parseFloat())); }
+  else if (cmd == 'A') { Serial.println(multimeter.updateCurrentCal(Serial.parseFloat())); }
   else if (cmd == 'V') { Serial.println(multimeter.updateVoltageCal(Serial.parseFloat())); }
 }
 

@@ -1,14 +1,10 @@
 using System.IO.Ports;
+using System.Text;
 
 public sealed class SerialTransport : IDisposable
 {
     public bool IsConnected {get; set;} = false;
-
-    public SerialTransport()
-    {
-        TryConnect();
-    }
-
+    private readonly object _serialLock = new object();
     private SerialPort _port = new()
     {
         NewLine = "\n",
@@ -17,21 +13,26 @@ public sealed class SerialTransport : IDisposable
         RtsEnable = false
     };
 
+    public SerialTransport()
+    {
+        TryConnect();
+    }
+
     Boolean TryHandshake()
     {
-        try
+        for (int i = 0; i < 40; i++)
         {
-            for (int i = 0; i < 40; i++)
+            try
             {
                 _port.Write(new byte[] { (byte)'X' }, 0, 1);
                 string response = _port.ReadLine().Trim();
                 if (response == "OK")
                 {
                     return true;
-                }              
+                }
             }
+            catch { }
         }
-        catch { }
 
         return false;
     }
@@ -106,32 +107,22 @@ public sealed class SerialTransport : IDisposable
         return false;
     }
 
-    public Boolean SendCommand(byte cmd)
+    public string? SendRequest(String cmd)
     {
-        try
+        lock (_serialLock)
         {
-            _port.Write(new byte[] { cmd }, 0, 1);
-            // Read until the NewLine string is encountered
-            return _port.ReadLine().Trim() == "OK";
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public string? QueryData(byte cmd)
-    {
-        try
-        {
-            _port.Write(new byte[] { cmd }, 0, 1);
-
-            // Read until the NewLine string is encountered
-            return _port.ReadLine().Trim();
-        }
-        catch
-        {
-            return null;
+            try
+            {
+                byte[] cmdBytes = Encoding.UTF8.GetBytes(cmd);
+                _port.Write(cmdBytes, 0, cmdBytes.Length);
+                // Read until the NewLine string is encountered
+                return _port.ReadLine().Trim();
+            }
+            catch
+            {
+                IsConnected = false;
+                return null;
+            }
         }
     }
 
