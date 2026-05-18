@@ -3,4 +3,5 @@
   <Project Path="SmartPower.Publisher/SmartPower.Publisher.csproj" />
   <Project Path="SmartPower.Serial/SmartPower.Serial.csproj" />
   <Project Path="SmartPower.Server/SmartPower.Server.csproj" />
+  <Project Path="SmartPower.RC/SmartPower.RC.csproj" />
 </Solution>
