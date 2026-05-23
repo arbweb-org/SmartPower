@@ -1,0 +1,9 @@
+dotnet publish -r linux-arm64 --self-contained true -c Release
+
+mkdir -p /home/smartpower/smartpower.rc
+
+scp -r ./bin/Release/net10.0/linux-arm64/publish/. root@xcooling.local:/home/smartpower/smartpower.rc
+
+chmod +x /home/smartpower/smartpower.rc/SmartPower.RC
+/home/smartpower/smartpower.rc/SmartPower.RC
+
