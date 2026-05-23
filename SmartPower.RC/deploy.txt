@@ -1,4 +1,7 @@
-dotnet publish -r linux-arm64 --self-contained true -c Release
+echo 'export DOTNET_GCHeapHardLimit=536870912' >> ~/.bashrc
+source ~/.bashrc
+
+dotnet publish -r linux-arm --self-contained true -c Release /p:PublishSingleFile=true
 
 mkdir -p /home/smartpower/smartpower.rc
 
