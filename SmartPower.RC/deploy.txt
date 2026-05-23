@@ -5,8 +5,15 @@ dotnet publish -r linux-arm --self-contained true -c Release /p:PublishSingleFil
 
 mkdir -p /home/smartpower/smartpower.rc
 
-scp -r ./bin/Release/net10.0/linux-arm64/publish/. root@xcooling.local:/home/smartpower/smartpower.rc
+# delete everything in destination folder
+rm -rf ./*
+
+scp -r /home/smartpower/SmartPower.RC/bin/Release/net10.0/linux-arm/publish/. root@10.218.30.240:/home/smartpower/smartpower.rc/
+
+xbps-install -S icu
+# export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
 chmod +x /home/smartpower/smartpower.rc/SmartPower.RC
+
 /home/smartpower/smartpower.rc/SmartPower.RC
 
