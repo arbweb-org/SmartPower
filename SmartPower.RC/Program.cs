@@ -1,32 +1,67 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using System.Net.Http;
+using System.Net.Sockets;
 
 namespace SmartPower.RC
 {
     public class Program
     {
+        private static readonly HttpClient _client = CreateUnixSocketClient();
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             var app = builder.Build();
 
-            app.MapGet("/func1", (string input) =>
+            // Forward status check
+            app.MapGet("/status", async () =>
             {
-                // Your logic here
-                var result = $"Received: {input}";
-
-                return Results.Ok(result);
+                return await ForwardAsync("http://localhost/status");
             });
 
-            app.MapGet("/func2", (string input) =>
+            // Forward commands without value
+            app.MapGet("/get/{cmd}", async (string cmd) =>
             {
-                // Your logic here
-                var result = $"Received: {input}";
+                return await ForwardAsync($"http://localhost/get/{cmd}");
+            });
 
-                return Results.Ok(result);
+            // Forward commands with value
+            app.MapGet("/get/{cmd}/{val}", async (string cmd, string val) =>
+            {
+                return await ForwardAsync($"http://localhost/get/{cmd}/{val}");
             });
 
             app.Run("http://0.0.0.0:5000");
+        }
+
+        private static async Task<string> ForwardAsync(string url)
+        {
+            try
+            {
+                var response = await _client.GetAsync(url);
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        private static HttpClient CreateUnixSocketClient()
+        {
+            var handler = new SocketsHttpHandler
+            {
+                ConnectCallback = async (context, cancellationToken) =>
+                {
+                    var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+                    var endpoint = new UnixDomainSocketEndPoint("/tmp/smartpower.serial.sock");
+                    await socket.ConnectAsync(endpoint, cancellationToken);
+                    return new NetworkStream(socket, ownsSocket: true);
+                }
+            };
+
+            return new HttpClient(handler);
         }
     }
 }
