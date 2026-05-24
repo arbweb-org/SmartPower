@@ -15,5 +15,6 @@ xbps-install -S icu
 
 chmod +x /home/smartpower/smartpower.rc/SmartPower.RC
 
-/home/smartpower/smartpower.rc/SmartPower.RC
+mkdir -p /etc/sv/smartpower
+
 
