@@ -1,5 +1,71 @@
 ﻿@page "/"
 
-<h1>Hello, world!</h1>
+<nav class="navbar">
+    <div class="container py-3 position-relative">
+        <div class="title">
+            X-Cooling <span class="brand-blue">Blue</span>
+        </div>
 
-Welcome to your new app.
+        <div class="top-icons">
+            <a class="icon-btn" href="/maintenance"><i class="bi bi-gear"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <!-- TEMPERATURE -->
+    <div class="card card-clean mb-4">
+        <div class="card-body text-center p-4">
+            <div class="text-secondary mb-2">Cabinet Temperature</div>
+
+            <div class="temp">2.1°</div>
+
+            <div class="text-secondary">Celsius</div>
+        </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="card card-clean mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span>Compressor</span>
+                <span class="badge bg-success">Running</span>
+            </div>
+
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span>Door</span>
+                <span class="badge bg-success">Closed</span>
+            </div>
+
+            <div class="d-flex justify-content-between py-2">
+                <span>Defrost</span>
+                <span class="badge bg-secondary">Idle</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SET TEMPERATURE (NEW SEPARATE CARD) -->
+    <div class="card card-clean mb-4">
+        <div class="card-body text-center p-4">
+
+            <h5 class="mb-4">Set Temperature</h5>
+
+            <div class="d-flex justify-content-center align-items-center gap-3">
+
+                <button class="btn btn-light border control-btn">
+                    <i class="bi bi-dash-lg"></i>
+                </button>
+
+                <div class="display-6 fw-bold" id="setTemp">2°C</div>
+
+                <button class="btn btn-light border control-btn">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+
+            <small class="text-secondary d-block mt-3">
+                Operator control (safe adjustment)
+            </small>
+        </div>
+    </div>
+</div>
