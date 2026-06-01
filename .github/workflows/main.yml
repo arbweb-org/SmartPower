@@ -1,0 +1,45 @@
+name: Build MAUI Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-android
+
+      - name: Restore dependencies
+        run: dotnet restore SmartPower.Client/SmartPower.Client.csproj
+
+      - name: Build Android APK
+        run: |
+          dotnet publish SmartPower.Client/SmartPower.Client.csproj \
+            -f net10.0-android \
+            -c Release \
+            -p:AndroidPackageFormats=apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartPower-${{ github.ref_name }}
+          path: 'SmartPower.Client/bin/Release/net10.0-android/publish/*.apk'
+          retention-days: 7
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SmartPower ${{ github.ref_name }}
+          files: 'SmartPower.Client/bin/Release/net10.0-android/publish/*.apk'
