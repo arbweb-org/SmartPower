@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using System.Net.Http;
 using System.Net.Sockets;
+using System.Diagnostics;
 
 namespace SmartPower.RC
 {
@@ -20,6 +18,63 @@ namespace SmartPower.RC
                 return await ForwardAsync("http://localhost/status");
             });
 
+            // Update WiFi AP password
+            app.MapGet("/wifi-password/{password}", async (string password) =>
+            {
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                { return Results.BadRequest("Password must be at least 8 characters"); }
+
+                if (!System.Text.RegularExpressions.Regex.IsMatch(password, @"^[\x20-\x7E]+$") ||
+                    password.IndexOfAny(new[] { '\'', '"', '`', '\\', '$', ';', '&', '|', '<', '>' }) >= 0)
+                { return Results.BadRequest("Password contains invalid characters"); }
+
+                try
+                {
+                    var result = RunCommand("nmcli", $"connection modify XCooling wifi-sec.psk \"{password}\"");
+                    if (result.ExitCode != 0)
+                        return Results.Problem($"nmcli modify failed: {result.Stderr}");
+
+                    result = RunCommand("nmcli", "connection up XCooling");
+                    if (result.ExitCode != 0)
+                        return Results.Problem($"nmcli up failed: {result.Stderr}");
+
+                    return Results.Ok("Password updated");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem($"Error: {ex.Message}");
+                }
+            });
+
+            app.MapGet("/wifi-ssid/{ssid}", async (string ssid) =>
+            {
+                if (string.IsNullOrWhiteSpace(ssid))
+                    return Results.BadRequest("SSID cannot be empty");
+
+                if (ssid.Length > 32)
+                    return Results.BadRequest("SSID must be 32 characters or less");
+
+                if (ssid.IndexOfAny(new[] { '\'', '"', '`', '\\', '$', ';', '&', '|', '<', '>' }) >= 0)
+                    return Results.BadRequest("SSID contains invalid characters");
+
+                try
+                {
+                    var result = RunCommand("nmcli", $"connection modify XCooling 802-11-wireless.ssid \"{ssid}\"");
+                    if (result.ExitCode != 0)
+                        return Results.Problem($"nmcli modify failed: {result.Stderr}");
+
+                    result = RunCommand("nmcli", "connection up XCooling");
+                    if (result.ExitCode != 0)
+                        return Results.Problem($"nmcli up failed: {result.Stderr}");
+
+                    return Results.Ok("SSID updated");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem($"Error: {ex.Message}");
+                }
+            });
+
             // Forward commands without value
             app.MapGet("/get/{cmd}", async (string cmd) =>
             {
@@ -30,7 +85,7 @@ namespace SmartPower.RC
             app.MapGet("/get/{cmd}/{val}", async (string cmd, string val) =>
             {
                 return await ForwardAsync($"http://localhost/get/{cmd}/{val}");
-            });
+            });            
 
             app.Run("http://0.0.0.0:5000");
         }
@@ -62,6 +117,19 @@ namespace SmartPower.RC
             };
 
             return new HttpClient(handler);
+        }
+
+        private static (int ExitCode, string Stderr) RunCommand(string cmd, string args)
+        {
+            var psi = new ProcessStartInfo(cmd, args)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            using var proc = Process.Start(psi)!;
+            proc.WaitForExit();
+            return (proc.ExitCode, proc.StandardError.ReadToEnd());
         }
     }
 }
