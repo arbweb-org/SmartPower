@@ -2,7 +2,7 @@ name: Build Serial
 on:
   push:
     tags:
-      - 'rc-v*'
+      - 'serial-v*'
 jobs:
   build:
     runs-on: ubuntu-latest
