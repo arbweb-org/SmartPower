@@ -24,14 +24,15 @@ jobs:
           dotnet publish SmartPower.Client/SmartPower.Client.csproj \
             -f net10.0-android \
             -c Release \
-            -p:AndroidPackageFormats=apk
+            -p:AndroidPackageFormats=apk \
+            -o publish/
 
       - uses: actions/upload-artifact@v4
         with:
           name: SmartPower.Client-${{ github.ref_name }}
-          path: SmartPower.Client/bin/Release/net10.0-android/publish/*.apk
+          path: publish/*.apk
 
       - uses: softprops/action-gh-release@v2
         with:
           name: SmartPower.Client ${{ github.ref_name }}
-          files: SmartPower.Client/bin/Release/net10.0-android/publish/*.apk
+          files: publish/*.apk
