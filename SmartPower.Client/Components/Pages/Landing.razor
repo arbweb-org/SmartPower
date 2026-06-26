@@ -1,0 +1,249 @@
+@page "/"
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<nav class="navbar">
+    <div class="container py-3">
+        <div class="title">
+            X-Cooling <span class="brand-blue">Blue</span>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4 d-flex flex-column align-items-center">
+
+    <!-- Icon -->
+    <div class="pulse-wrap my-4">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="core">
+            <i class="bi bi-thermometer-half core-icon @(connected ? "icon-ok" : "")"></i>
+        </div>
+    </div>
+
+    <!-- Status card -->
+    <div class="card card-clean w-100 mb-4">
+        <div class="card-body text-center p-4">
+
+            <div class="text-secondary mb-2" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;">
+                @(connected ? "Connected" : "Connecting")
+            </div>
+
+            <div class="status-label mb-3">@statusText</div>
+
+            <!-- Progress bar -->
+            <div class="progress mb-3" style="height:4px;border-radius:2px;">
+                <div class="progress-bar progress-bar-striped @(connected ? "" : "progress-bar-animated")"
+                     role="progressbar"
+                     style="width:@(progress)%;background-color:#0d6efd;transition:width .4s ease;">
+                </div>
+            </div>
+
+            <div class="text-secondary" style="font-size:.8rem;">@subText</div>
+        </div>
+    </div>
+
+    <!-- Device info card -->
+    <div class="card card-clean w-100">
+        <div class="card-body">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-secondary">Device</span>
+                <span>192.168.4.1</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-secondary">Port</span>
+                <span>5000</span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+                <span class="text-secondary">Status</span>
+                @if (connected)
+                {
+                    <span class="badge bg-success">Online</span>
+                }
+                else if (failed)
+                {
+                    <span class="badge bg-danger">Unreachable</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Waiting</span>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* ── Matches home page exactly ─────────────────────── */
+    body { background: #f8f9fa; }
+
+    .navbar {
+        background: #ffffff;
+        border-bottom: 1px solid #e9ecef;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    .title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    .brand-blue { color: #0d6efd; }
+
+    .card-clean {
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+
+    /* ── Status label ──────────────────────────────────── */
+    .status-label {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #212529;
+        min-height: 2rem;
+        transition: color .4s;
+    }
+
+    /* ── Pulse rings ───────────────────────────────────── */
+    .pulse-wrap {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1.5px solid #0d6efd33;
+        animation: ripple 2.2s ease-out infinite;
+    }
+    .ring-1 { width: 120px; height: 120px; animation-delay: 0s; }
+    .ring-2 { width:  86px; height:  86px; animation-delay: .7s; }
+
+    @keyframes ripple {
+        0%   { transform: scale(.7); opacity: .7; }
+        100% { transform: scale(1);  opacity: 0; }
+    }
+
+    .core {
+        width: 56px;
+        height: 56px;
+        background: #ffffff;
+        border: 1.5px solid #dee2e6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    .core-icon {
+        font-size: 1.6rem;
+        color: #0d6efd;
+        transition: color .5s;
+    }
+
+    .icon-ok { color: #198754; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ring { animation: none; }
+    }
+</style>
+
+@code {
+    private string statusText = "Reaching device…";
+    private string subText    = "Connecting to X-Cooling service";
+    private int    progress   = 0;
+    private bool   connected  = false;
+    private bool   failed     = false;
+
+    private CancellationTokenSource _cts = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await RunSequence(_cts.Token);
+    }
+
+    private async Task RunSequence(CancellationToken ct)
+    {
+        await AnimateProgress(0, 30, 600, ct);
+        SetStatus("Handshaking…", "Awaiting device response");
+
+        bool ok = await TryConnect(ct);
+
+        if (!ok)
+        {
+            failed = true;
+            SetStatus("Retrying…", "Device may be waking up");
+            await AnimateProgress(progress, 55, 500, ct);
+            failed = false;
+            ok = await TryConnect(ct);
+        }
+
+        if (ok)
+        {
+            connected = true;
+            SetStatus("Online", "Redirecting to dashboard…");
+            await AnimateProgress(progress, 100, 500, ct);
+            StateHasChanged();
+            await Task.Delay(600, ct);
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            failed = true;
+            SetStatus("Timed out", "Loading cached view…");
+            await AnimateProgress(progress, 100, 800, ct);
+            StateHasChanged();
+            await Task.Delay(800, ct);
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private async Task<bool> TryConnect(CancellationToken ct)
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var res = await http.GetAsync("http://192.168.4.1:5000/get/T1", ct);
+            await AnimateProgress(progress, 85, 400, ct);
+            return res.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    private async Task AnimateProgress(int from, int to, int durationMs, CancellationToken ct)
+    {
+        int steps = Math.Abs(to - from);
+        if (steps == 0) return;
+        int delay = Math.Max(durationMs / steps, 4);
+        for (int i = from; i <= to; i++)
+        {
+            if (ct.IsCancellationRequested) return;
+            progress = i;
+            StateHasChanged();
+            await Task.Delay(delay, ct);
+        }
+    }
+
+    private void SetStatus(string main, string sub)
+    {
+        statusText = main;
+        subText    = sub;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _cts.CancelAsync();
+        _cts.Dispose();
+    }
+}
