@@ -1,23 +1,27 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace SmartPower.Client;
 
 public static class MauiProgram
 {
-	public static MauiApp CreateMauiApp()
-	{
-		var builder = MauiApp.CreateBuilder();
-		builder.UseMauiApp<App>();
+        public static MauiApp CreateMauiApp()
+        {
+                var builder = MauiApp.CreateBuilder();
+                builder.UseMauiApp<App>();
 
-		builder.Services.AddMauiBlazorWebView();
-		builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.4.1:5000/") });
-		builder.Services.AddScoped<FridgeService>();
+                builder.Services.AddMauiBlazorWebView();
 
 #if DEBUG
-		builder.Services.AddBlazorWebViewDeveloperTools();
-		builder.Logging.AddDebug();
+                var baseUrl = "http://127.0.0.1:5000/";
+                builder.Services.AddBlazorWebViewDeveloperTools();
+                builder.Logging.AddDebug();
+#else
+                var baseUrl = "http://192.168.4.1:5000/";
 #endif
 
-		return builder.Build();
-	}
+                builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(baseUrl) });
+                builder.Services.AddScoped<FridgeService>();
+
+                return builder.Build();
+        }
 }
