@@ -1,5 +1,6 @@
 @page "/"
 @inject NavigationManager Nav
+@inject FridgeService Fridge
 @implements IAsyncDisposable
 
 <nav class="navbar">
@@ -44,7 +45,13 @@
         <div class="card-body">
             <div class="status-item d-flex justify-content-between">
                 <span class="text-secondary">Device</span>
-                <span>192.168.4.1</span>
+                <span>
+#if DEBUG
+                    127.0.0.1
+#else
+                    192.168.4.1
+#endif
+                </span>
             </div>
             <div class="status-item d-flex justify-content-between">
                 <span class="text-secondary">Port</span>
@@ -71,7 +78,7 @@
 </div>
 
 @code {
-    private string statusText = "Reaching deviceâ€¦";
+    private string statusText = "Reaching device…";
     private string subText    = "Connecting to X-Cooling service";
     private int    progress   = 0;
     private bool   connected  = false;
@@ -88,49 +95,42 @@
     private async Task RunSequence(CancellationToken ct)
     {
         await AnimateProgress(0, 30, 600, ct);
-        SetStatus("Handshakingâ€¦", "Awaiting device response");
+        SetStatus("Handshaking…", "Awaiting device response");
 
-        bool ok = await TryConnect(ct);
+        bool ok = await TryConnect();
 
         if (!ok)
         {
             failed = true;
-            SetStatus("Retryingâ€¦", "Device may be waking up");
+            SetStatus("Retrying…", "Device may be waking up");
             await AnimateProgress(progress, 55, 500, ct);
             failed = false;
-            ok = await TryConnect(ct);
+            ok = await TryConnect();
         }
 
         if (ok)
         {
             connected = true;
-            SetStatus("Online", "Redirecting to dashboardâ€¦");
+            SetStatus("Online", "Redirecting to dashboard…");
             await AnimateProgress(progress, 100, 500, ct);
             StateHasChanged();
             await Task.Delay(600, ct);
-            Nav.NavigateTo("/Home");
+            Nav.NavigateTo("/home");
         }
         else
         {
             failed = true;
-            SetStatus("Timed out", "Loading cached viewâ€¦");
+            SetStatus("Timed out", "Could not reach device");
             await AnimateProgress(progress, 100, 800, ct);
             StateHasChanged();
-            await Task.Delay(800, ct);
-            Nav.NavigateTo("/");
         }
     }
 
-    private async Task<bool> TryConnect(CancellationToken ct)
+    private async Task<bool> TryConnect()
     {
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var res = await http.GetAsync("http://192.168.4.1:5000/get/T1", ct);
-            await AnimateProgress(progress, 85, 400, ct);
-            return res.IsSuccessStatusCode;
-        }
-        catch { return false; }
+        var ok = await Fridge.GetStatus();
+        await AnimateProgress(progress, 85, 400, _cts.Token);
+        return ok;
     }
 
     private async Task AnimateProgress(int from, int to, int durationMs, CancellationToken ct)
