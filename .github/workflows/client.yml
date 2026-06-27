@@ -20,33 +20,19 @@ jobs:
 
       - run: dotnet restore SmartPower.Client/SmartPower.Client.csproj
 
-      - name: Set build type
-        id: config
-        run: |
-          if [[ "${{ github.ref_name }}" == *"-debug" ]]; then
-            echo "configuration=Debug" >> $GITHUB_OUTPUT
-          else
-            echo "configuration=Release" >> $GITHUB_OUTPUT
-          fi
-
       - run: |
           dotnet publish SmartPower.Client/SmartPower.Client.csproj \
             -f net10.0-android \
-            -c ${{ steps.config.outputs.configuration }} \
+            -c ${{ contains(github.ref_name, '-debug') && 'Debug' || 'Release' }} \
             -p:AndroidPackageFormats=apk \
             -o publish/
 
-      - name: Rename APK
-        run: |
-          VERSION=$(echo "${{ github.ref_name }}" | sed 's/client-//')
-          find publish/ -name "*.apk" -exec mv {} publish/XCooling-${VERSION}.apk \;
-
       - uses: actions/upload-artifact@v4
         with:
-          name: XCooling-${{ github.ref_name }}
+          name: SmartPower.Client-${{ github.ref_name }}
           path: publish/*.apk
 
       - uses: softprops/action-gh-release@v2
         with:
-          name: XCooling ${{ github.ref_name }}
+          name: SmartPower.Client ${{ github.ref_name }}
           files: publish/*.apk
