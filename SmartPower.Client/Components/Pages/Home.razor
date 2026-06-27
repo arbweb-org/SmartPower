@@ -1,4 +1,6 @@
-﻿@page "/Home"
+@page "/Home"
+@inject FridgeService Fridge
+@implements IAsyncDisposable
 
 <nav class="navbar">
     <div class="container py-3 position-relative">
@@ -18,7 +20,7 @@
         <div class="card-body text-center p-4">
             <div class="text-secondary mb-2">Cabinet Temperature</div>
 
-            <div class="temp">2.1°</div>
+            <div class="temp">@(temperature.HasValue ? $"{temperature:F1}°" : "—")</div>
 
             <div class="text-secondary">Celsius</div>
         </div>
@@ -44,7 +46,7 @@
         </div>
     </div>
 
-    <!-- SET TEMPERATURE (NEW SEPARATE CARD) -->
+    <!-- SET TEMPERATURE -->
     <div class="card card-clean mb-4">
         <div class="card-body text-center p-4">
 
@@ -69,3 +71,23 @@
         </div>
     </div>
 </div>
+
+@code {
+    private double? temperature;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        _timer = new Timer(async _ =>
+        {
+            temperature = await Fridge.GetTemperature1();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_timer is not null)
+            await _timer.DisposeAsync();
+    }
+}
