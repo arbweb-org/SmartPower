@@ -20,7 +20,7 @@
         <div class="card-body text-center p-4">
             <div class="text-secondary mb-2">Cabinet Temperature</div>
 
-            <div class="temp">@(temperature.HasValue ? $"{temperature:F1}°" : "—")</div>
+            <div class="temp">@(temperature.HasValue ? FormatTemp(temperature.Value) : "—")</div>
 
             <div class="text-secondary">Celsius</div>
         </div>
@@ -83,6 +83,12 @@
             temperature = await Fridge.GetTemperature1();
             await InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private string FormatTemp(double val)
+    {
+        string sign = val < 0 ? "-" : "\u00a0";
+        return $"{sign}{Math.Abs(val):F1}°";
     }
 
     public async ValueTask DisposeAsync()
