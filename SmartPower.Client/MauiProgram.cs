@@ -16,7 +16,7 @@ public static class MauiProgram
                 builder.Services.AddBlazorWebViewDeveloperTools();
                 builder.Logging.AddDebug();
 #else
-                var baseUrl = "http://192.168.4.1:5000/";
+                var baseUrl = "http://127.0.0.1:5000/";
 #endif
 
                 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(baseUrl) });
