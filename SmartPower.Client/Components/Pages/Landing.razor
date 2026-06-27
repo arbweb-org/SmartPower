@@ -44,20 +44,6 @@
     <div class="card card-clean w-100">
         <div class="card-body">
             <div class="status-item d-flex justify-content-between">
-                <span class="text-secondary">Device</span>
-                <span>
-#if DEBUG
-                    127.0.0.1
-#else
-                    192.168.4.1
-#endif
-                </span>
-            </div>
-            <div class="status-item d-flex justify-content-between">
-                <span class="text-secondary">Port</span>
-                <span>5000</span>
-            </div>
-            <div class="status-item d-flex justify-content-between">
                 <span class="text-secondary">Status</span>
                 @if (connected)
                 {
