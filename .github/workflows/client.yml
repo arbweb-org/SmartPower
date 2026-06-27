@@ -39,7 +39,7 @@ jobs:
       - name: Rename APK
         run: |
           VERSION=$(echo "${{ github.ref_name }}" | sed 's/client-//')
-          mv publish/*.apk publish/XCooling-${VERSION}.apk
+          find publish/ -name "*.apk" -exec mv {} publish/XCooling-${VERSION}.apk \;
 
       - uses: actions/upload-artifact@v4
         with:
