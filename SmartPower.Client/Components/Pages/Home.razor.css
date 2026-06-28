@@ -1,4 +1,5 @@
 .temp {
-    font-family: 'Courier New', monospace;
+    font-family: 'Roboto Mono', monospace;
     font-variant-numeric: tabular-nums;
+    font-weight: 700;
 }
