@@ -1,3 +1,4 @@
+
 @page "/Home"
 @inject FridgeService Fridge
 @implements IAsyncDisposable
@@ -54,13 +55,13 @@
 
             <div class="d-flex justify-content-center align-items-center gap-3">
 
-                <button class="btn btn-light border control-btn">
+                <button class="btn btn-light border control-btn" @onclick="DecrementTarget">
                     <i class="bi bi-dash-lg"></i>
                 </button>
 
-                <div class="display-6 fw-bold" id="setTemp">2°C</div>
+                <div class="display-6 fw-bold" id="setTemp">@targetTemp°C</div>
 
-                <button class="btn btn-light border control-btn">
+                <button class="btn btn-light border control-btn" @onclick="IncrementTarget">
                     <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
@@ -74,15 +75,46 @@
 
 @code {
     private double? temperature;
-    private Timer? _timer;
+    private int targetTemp = 5;
+    private Timer? _pollTimer;
+    private Timer? _debounceTimer;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _timer = new Timer(async _ =>
+        var paramsStr = await Fridge.GetParameters();
+        if (paramsStr != null)
+        {
+            var parts = paramsStr.Split('|');
+            if (parts.Length > 0 && int.TryParse(parts[0], out var t))
+                targetTemp = t;
+        }
+
+        _pollTimer = new Timer(async _ =>
         {
             temperature = await Fridge.GetTemperature1();
             await InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private void IncrementTarget()
+    {
+        targetTemp++;
+        ScheduleSetTemp();
+    }
+
+    private void DecrementTarget()
+    {
+        targetTemp--;
+        ScheduleSetTemp();
+    }
+
+    private void ScheduleSetTemp()
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(async _ =>
+        {
+            await Fridge.SetTargetTemp(targetTemp);
+        }, null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
     }
 
     private string FormatTemp(double val)
@@ -93,7 +125,9 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_timer is not null)
-            await _timer.DisposeAsync();
+        if (_pollTimer is not null)
+            await _pollTimer.DisposeAsync();
+        if (_debounceTimer is not null)
+            await _debounceTimer.DisposeAsync();
     }
 }
